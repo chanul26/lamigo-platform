@@ -1,7 +1,17 @@
-from fastapi import FastAPI
+"""
+LamiGo Backend Entry Point (Legacy)
 
-app = FastAPI()
+This file is kept for backward compatibility.
+The main application is now at: backend/app/main.py
 
-@app.get("/")
-def read_root():
-    return {"message": "LamiGo Backend is Running"}
+To run the server:
+    uvicorn app.main:app --reload
+
+Or use this file:
+    uvicorn main:app --reload
+"""
+
+# Re-export the app from the new location for backward compatibility
+from app.main import app
+
+__all__ = ["app"]

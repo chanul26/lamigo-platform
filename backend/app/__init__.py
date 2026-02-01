@@ -1,0 +1,1 @@
+# LamiGo Backend Application
