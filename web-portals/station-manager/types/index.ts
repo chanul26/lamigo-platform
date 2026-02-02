@@ -1,6 +1,7 @@
 /**
  * LamiGo Station Manager - TypeScript Type Definitions
  * These interfaces mirror the backend Pydantic schemas exactly
+ * 
  * Backend source: backend/app/schemas/
  */
 
