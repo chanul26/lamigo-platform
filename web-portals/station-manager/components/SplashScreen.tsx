@@ -1,0 +1,29 @@
+'use client';
+
+import Image from 'next/image';
+
+export default function SplashScreen() {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#121212]"
+      aria-hidden="true"
+    >
+      <div className="flex flex-col items-center gap-6">
+        <Image
+          src="/assets/logo1.png"
+          alt="LamiGo"
+          width={500}
+          height={500}
+          className="animate-pulse"
+          priority
+        />
+        <span
+          className="text-2xl font-semibold tracking-tight"
+          style={{ color: '#2563EB' }}
+        >
+          LamiGo
+        </span>
+      </div>
+    </div>
+  );
+}
