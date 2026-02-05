@@ -5,7 +5,8 @@ import Image from 'next/image';
 export default function SplashScreen() {
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#121212]"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      style={{ backgroundColor: 'var(--bg-dark)' }}
       aria-hidden="true"
     >
       <div className="flex flex-col items-center gap-6">
@@ -19,7 +20,7 @@ export default function SplashScreen() {
         />
         <span
           className="text-2xl font-semibold tracking-tight"
-          style={{ color: '#2563EB' }}
+          style={{ color: 'var(--primary-blue)' }}
         >
           LamiGo
         </span>
