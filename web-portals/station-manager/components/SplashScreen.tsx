@@ -5,7 +5,8 @@ import Image from 'next/image';
 export default function SplashScreen() {
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      style={{ backgroundColor: 'var(--bg-dark)' }}
       aria-hidden="true"
     >
       <div className="flex flex-col items-center gap-6">
