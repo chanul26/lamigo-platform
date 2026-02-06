@@ -11,18 +11,15 @@ export default function SplashScreen() {
     >
       <div className="flex flex-col items-center gap-6">
         <Image
-          src="/assets/logo1.png"
+          src="/assets/LamiGo_Logo_Light.svg"
           alt="LamiGo"
           width={500}
           height={500}
           className="animate-pulse"
           priority
         />
-        <span
-          className="text-2xl font-semibold tracking-tight"
-          style={{ color: 'var(--primary-blue)' }}
-        >
-          LamiGo
+        <span className="text-2xl font-semibold tracking-tight text-gray-800">
+          Last Mile Delivery Optimisation Platform
         </span>
       </div>
     </div>
