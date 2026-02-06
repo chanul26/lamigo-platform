@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Package,
   Wallet,
@@ -10,6 +11,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import SplashScreen from '@/components/SplashScreen';
 
 interface StatCard {
   title: string;
@@ -66,7 +68,7 @@ const quickActions = [
   },
 ];
 
-export default function Dashboard() {
+function DashboardContent() {
   return (
     <div className="p-8">
       {/* Header */}
@@ -221,6 +223,25 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <SplashScreen />;
+  }
+
+  return (
+    <div className="animate-fade-in">
+      <DashboardContent />
     </div>
   );
 }
