@@ -510,6 +510,45 @@ Do **not** commit `.env` or `.env.local`. Use `.env.example` in the repo if you 
 
 ---
 
+
+
+
+## 🐳 Docker Setup (Recommended for Team)
+
+We have Dockerized the Backend and Database to ensure everyone works in the same environment.
+
+### Prerequisites
+1.  **Install Docker Desktop:** [Download Here](https://www.docker.com/products/docker-desktop/)
+
+2.  **Turn it on:** Open the Docker Desktop app and ensure it is running.
+
+### 🚀 Quick Start
+Run the following command in the root directory:
+
+```bash
+# Starts the Backend API and PostgreSQL Database
+docker compose up
+
+
+Backend API: http://localhost:8000
+
+API Documentation: http://localhost:8000/docs
+
+Database: localhost:5432 (User: user, Password: password, DB: lamigo_db)
+
+
+🛠 Common Commands
+
+| Goal | Command |
+|---|---|
+| Start Everything | `docker compose up` |
+| Stop Everything | Press `Ctrl + C` or run `docker compose down` |
+| Rebuild (New Dependencies) | `docker compose up --build` |
+| Wipe Data & Restart | `docker compose down -v` then `docker compose up` |
+| Run Admin Bootstrap | `docker compose exec backend python scripts/bootstrap_admin.py` |
+| Create Station Manager | `docker compose exec backend python scripts/create_manager.py` |
+
+
 ## 📋 Development Workflow
 
 1. **Always start the backend** before Station Manager or Customer Portal so API calls succeed.
