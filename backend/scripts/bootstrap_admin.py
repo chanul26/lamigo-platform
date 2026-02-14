@@ -70,10 +70,24 @@ def main() -> None:
     password = secrets.token_urlsafe(20)
     firebase_uid: Optional[str] = None
 
-    # Initialize Firebase (idempotent)
+# Initialize Firebase (idempotent)
     if not firebase_admin._apps:
         cred = credentials.Certificate(firebase_key_path)
         firebase_admin.initialize_app(cred)
+
+    # --- NEW INTELLIGENT CLEANUP ---
+    try:
+        # Check if the user already exists
+        existing_user = auth.get_user_by_email(ADMIN_EMAIL)
+        print(f"⚠️  Found existing Firebase user {ADMIN_EMAIL} (UID: {existing_user.uid})")
+        print(f"🔄 Deleting it to ensure a fresh sync with Docker...")
+        auth.delete_user(existing_user.uid)
+    except auth.UserNotFoundError:
+        print(f"✅ Firebase user {ADMIN_EMAIL} is clear. Creating new one...")
+    except Exception as e:
+        print(f"ERROR: Could not check/delete existing user: {e}", file=sys.stderr)
+        sys.exit(1)
+    # -------------------------------
 
     try:
         user_record = auth.create_user(
