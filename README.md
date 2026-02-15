@@ -12,13 +12,13 @@ LamiGo is a multi-stack platform for optimizing last-mile delivery logistics in 
 - [Folder Structure](#-folder-structure)
 - [How It All Works](#-how-it-all-works)
 - [Tech Stack & Dependencies](#-tech-stack--dependencies)
-- [Prerequisites](#-prerequisites)
-- [Installation & Setup](#-installation--setup)
-- [Multi-Tenant Bootstrap](#2b-multi-tenant-bootstrap-backend)
-- [Running the Project](#-running-the-project)
+- [Getting Started (Docker)](#-getting-started-docker-first)
+- [Development Workflow (Protected Branch)](#-development-workflow-strict)
+- [CI/CD Pipeline](#-cicd-pipeline)
+- [Useful Commands Cheat Sheet](#-useful-commands-cheat-sheet)
 - [API Reference](#-api-reference)
 - [Environment Variables](#-environment-variables)
-- [Development Workflow](#-development-workflow)
+- [Development Tips](#-development-tips)
 
 ---
 
@@ -254,56 +254,74 @@ User linked to Firebase UID and an organization with role
 
 ---
 
-## �📌 Prerequisites
+## 🚀 Getting Started (Docker-First)
 
-Install these before running any part of the project:
+The project runs on **Docker**. You don’t need to install Python or PostgreSQL locally—containers provide everything.
 
-| Tool | Version | Check Command | Install |
-|------|---------|---------------|--------|
-| **Python** | 3.10+ | `python --version` | [python.org](https://www.python.org/downloads/) |
-| **Node.js** | 18+ | `node --version` | [nodejs.org](https://nodejs.org/) |
-| **npm** | 9+ | `npm --version` | Bundled with Node.js |
-| **Flutter** | 3.10+ | `flutter --version` | [flutter.dev](https://flutter.dev/docs/get-started/install) |
+### 🐳 Prerequisites
 
-Optional for mobile: **Android Studio** (Android) or **Xcode** (macOS/iOS).
+1. **Install Docker Desktop:** [Download here](https://www.docker.com/products/docker-desktop/)
+2. **Start it:** Open Docker Desktop and ensure it’s running.
+
+### ▶️ The only command you need
+
+From the **project root** (`lamigo-platform/`):
+
+```bash
+docker compose up
+```
+
+This starts:
+
+- **FastAPI Backend** → http://localhost:8000 (API docs: http://localhost:8000/docs)
+- **PostgreSQL Database** → `localhost:5432` (used by the backend)
+
+Stop with `Ctrl+C` or run `docker compose down`.
 
 ---
 
-## 📦 Installation & Setup
+## ⚠️ Development Workflow (Strict)
 
-### 1. Clone the repository
+> **The `dev` branch is PROTECTED.**  
+> Direct pushes to `dev` will **fail**. Follow the flow below.
 
-```bash
-git clone <repository-url>
-cd lamigo-platform
-```
+| Step | What to do |
+|------|------------|
+| 1️⃣ | Create a new branch from `dev`: `git checkout -b feature/your-feature` |
+| 2️⃣ | Push your changes: `git push origin feature/your-feature` |
+| 3️⃣ | Open a **Pull Request** into `dev` on GitHub. |
+| 4️⃣ | Wait for the **CI/CD Robot** to pass (green check on the PR). |
+| 5️⃣ | Merge the PR (squash or merge commit as per team rules). |
 
-### 2. Backend (FastAPI)
+No merging until CI is green.
 
-```bash
-cd backend
+---
 
-# Create virtual environment (recommended: .venv)
-python -m venv .venv
+## 🤖 CI/CD Pipeline
 
-# Activate it
-# macOS/Linux:
-source .venv/bin/activate
-# Windows (PowerShell):
-# .venv\Scripts\Activate.ps1
-# Windows (CMD):
-# .venv\Scripts\activate.bat
+We use a **GitHub Action** that runs on every Pull Request:
 
-# Install dependencies
-pip install -r requirements.txt
+- **Workflow file:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+- **What it does:** Builds the Docker image and checks that the backend container starts. If the build or startup fails, the PR shows a red X—fix the issue before merging.
 
-# Optional: create .env (see Environment Variables)
-# cp .env.example .env
-```
+---
 
-### 2b. Multi-Tenant Bootstrap (Backend)
+## 📋 Useful Commands (Cheat Sheet)
 
-After the backend is set up and your `.env` has `DATABASE_URL` and `FIREBASE_SERVICE_ACCOUNT_PATH` (see [Firebase service account path](#firebase-service-account-path) below), use this workflow to create the CityPack organization and Super Admin in Firebase and PostgreSQL.
+| Goal | Command |
+|------|--------|
+| **Start app** | `docker compose up` |
+| **Rebuild** (e.g. after adding packages to `requirements.txt`) | `docker compose up --build` |
+| **Reset database** (nuclear option – deletes all data for a fresh start) | `docker compose down -v` then `docker compose up` |
+| **Create Super Admin** (CityPack org + Firebase user) | `docker compose exec backend python scripts/bootstrap_admin.py` |
+
+Bootstrap requires `backend/.env` with `DATABASE_URL` and `FIREBASE_SERVICE_ACCOUNT_PATH`; see [Environment Variables](#-environment-variables) and [Firebase service account path](#firebase-service-account-path).
+
+---
+
+## 📦 Multi-Tenant Bootstrap (non-Docker / local)
+
+If you're not using Docker, use a local venv and run `python scripts/bootstrap_admin.py` from `backend/` after setting `backend/.env` (see [Environment Variables](#-environment-variables) and [Firebase service account path](#firebase-service-account-path)). The long step-by-step below is kept for reference.
 
 **1. Set up the environment**  
 You must be inside the `backend` folder and have your virtual environment (“bubble”) activated. The bubble starts empty—install dependencies so the script can find `python-dotenv`, `sqlalchemy`, `firebase-admin`, etc.
@@ -381,73 +399,6 @@ python scripts/bootstrap_admin.py
 
 ---
 
-### 3. Station Manager (Next.js)
-
-```bash
-cd web-portals/station-manager
-npm install
-```
-
-### 4. Customer Portal (Next.js)
-
-```bash
-cd web-portals/customer-portal
-npm install
-```
-
-### 5. Mobile App (Flutter)
-
-```bash
-cd mobile-app
-flutter pub get
-```
-
----
-
-## ▶️ Running the Project
-
-Start the backend first, then the frontends.
-
-### Terminal 1 – Backend
-
-```bash
-cd backend
-source .venv/bin/activate   # or .venv\Scripts\activate on Windows
-uvicorn app.main:app --reload
-```
-
-- API: **http://127.0.0.1:8000**
-- Swagger UI: **http://127.0.0.1:8000/docs**
-- ReDoc: **http://127.0.0.1:8000/redoc**
-
-### Terminal 2 – Station Manager
-
-```bash
-cd web-portals/station-manager
-npm run dev
-```
-
-- App: **http://localhost:3000**
-
-### Terminal 3 – Customer Portal (optional)
-
-```bash
-cd web-portals/customer-portal
-npm run dev -- -p 3001
-```
-
-- App: **http://localhost:3001**
-
-### Terminal 4 – Mobile App (optional)
-
-```bash
-cd mobile-app
-flutter run
-```
-
-- Use a connected device or emulator (`flutter devices` to list).
-
----
 
 ## 📡 API Reference
 
@@ -510,46 +461,7 @@ Do **not** commit `.env` or `.env.local`. Use `.env.example` in the repo if you 
 
 ---
 
-
-
-
-## 🐳 Docker Setup (Recommended for Team)
-
-We have Dockerized the Backend and Database to ensure everyone works in the same environment.
-
-### Prerequisites
-1.  **Install Docker Desktop:** [Download Here](https://www.docker.com/products/docker-desktop/)
-
-2.  **Turn it on:** Open the Docker Desktop app and ensure it is running.
-
-### 🚀 Quick Start
-Run the following command in the root directory:
-
-```bash
-# Starts the Backend API and PostgreSQL Database
-docker compose up
-
-
-Backend API: http://localhost:8000
-
-API Documentation: http://localhost:8000/docs
-
-Database: localhost:5432 (User: user, Password: password, DB: lamigo_db)
-
-
-🛠 Common Commands
-
-| Goal | Command |
-|---|---|
-| Start Everything | `docker compose up` |
-| Stop Everything | Press `Ctrl + C` or run `docker compose down` |
-| Rebuild (New Dependencies) | `docker compose up --build` |
-| Wipe Data & Restart | `docker compose down -v` then `docker compose up` |
-| Run Admin Bootstrap | `docker compose exec backend python scripts/bootstrap_admin.py` |
-| Create Station Manager | `docker compose exec backend python scripts/create_manager.py` |
-
-
-## 📋 Development Workflow
+## 📋 Development Tips
 
 1. **Always start the backend** before Station Manager or Customer Portal so API calls succeed.
 2. **CORS** is set for `http://localhost:3000` and `http://localhost:3001` in `backend/app/main.py`.
@@ -566,21 +478,6 @@ Database: localhost:5432 (User: user, Password: password, DB: lamigo_db)
 | **Chanul** | Backend, web portals, architecture |
 | **Heshadha** | ML, route optimization (see `backend/app/services/optimization.py`) |
 | **Nevith** | Mobile app |
-
-
-
-## Run this for make the station manager and Branches.
-
-## run in venv in backedn folder
-python scripts/create_manager.py
-
-check database details
-
-## Run in terminal to see the detals of Database
-psql lamigo_db -c "SELECT * FROM organizations;"
-psql lamigo_db -c "SELECT email, role, org_id FROM users;"
-
-
 
 ---
 
