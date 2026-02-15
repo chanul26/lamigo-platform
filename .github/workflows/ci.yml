@@ -1,0 +1,43 @@
+name: LamiGo Backend CI
+
+# 1. Trigger: When do we run?
+on:
+  push:
+    branches: [ "main", "dev", "feature/*" ]  # Run on pushes to main, dev, or features
+  pull_request:
+    branches: [ "main", "dev" ]               # Run on PRs targeting main/dev
+
+jobs:
+  # 2. The Job: "Build and Test"
+  build-and-test:
+    runs-on: ubuntu-latest  # Use a Linux server provided by GitHub
+
+    steps:
+    # A. Check out the code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # B. Set up Docker (GitHub Actions comes with it, but this setup ensures compatibility)
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # C. Create a dummy .env file for the test
+    # (We don't put real secrets in GitHub for a simple build test)
+    - name: Create Dummy Env File
+      run: |
+        cd backend
+        echo "DATABASE_URL=postgresql://user:password@db:5432/lamigo_test" >> .env
+        echo "FIREBASE_SERVICE_ACCOUNT_PATH=config/serviceAccountKey.json" >> .env
+    
+    # D. Try to Build the Docker Container
+    # If your Dockerfile is broken, this step will FAIL and alert you.
+    - name: Build Docker Image
+      run: |
+        docker compose build backend
+
+    # E. (Optional) Run a simple script check
+    # This fires up the container and checks if Python can start without crashing
+    - name: Verify Backend Starts
+      run: |
+        docker compose up -d backend
+        docker compose exec -T backend python --version

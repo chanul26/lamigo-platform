@@ -1,0 +1,4 @@
+# ============================================
+# backend/config/ - Configuration files (if any, otherwise ignore this section)
+# ============================================
+config/*.json   
