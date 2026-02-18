@@ -49,7 +49,7 @@ const quickActions = [
   {
     label: 'Create New Trip',
     icon: <Plus size={20} />,
-    href: '/trips',
+    href: '/trips/create',
     primary: true,
   },
   {
