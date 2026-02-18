@@ -1,0 +1,116 @@
+.container {
+  padding: 32px 16px;
+  background-color: #F3F4F6;
+  min-height: 100vh;
+  margin-left: 250px;
+}
+
+.heading {
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0 0 24px 0;
+  color: #111827;
+}
+
+.tabContainer {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.tabActive {
+  background-color: #111827;
+  color: white;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.tabInactive {
+  background-color: transparent;
+  color: #6B7280;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.formCard {
+  background-color: white;
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 525;
+  color: #111827;
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2563EB;
+}
+
+.input::placeholder {
+  color: #9CA3AF;
+  font-weight: 300;
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.helperText {
+  color: #6B7280;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: #6B7280;
+  border: 1px solid #bbbec2;
+  background-color: white;
+  font-weight: 525;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.submitButton {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #2563EB;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
