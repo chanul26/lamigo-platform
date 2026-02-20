@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'services/api_service.dart';
+
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
   @override
@@ -22,7 +24,12 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => debugPrint("Login attempt"),
+              onPressed: () async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Connecting to backend...')),
+                );
+                await ApiService().login('dummy', 'dummy');
+              },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, padding: const EdgeInsets.symmetric(vertical: 16)),
               child: const Text("LOGIN"),
             ),
