@@ -6,34 +6,25 @@ Last-Mile Delivery Optimization Platform for Sri Lanka
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import api_router
+from app.core.config import settings
+from app.api.api_v1.router import api_router
 
-# Initialize FastAPI application
 app = FastAPI(
-    title="LamiGo API",
+    title=settings.APP_NAME,
     description="Last-Mile Delivery Optimization Platform for Sri Lanka",
-    version="1.0.0",
+    version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# CORS Configuration - Allow Station Manager and Customer Portal
-origins = [
-    "http://localhost:3000",  # Station Manager Web Portal
-    "http://localhost:3001",  # Customer Portal
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API v1 router
 app.include_router(api_router, prefix="/api/v1")
 
 
@@ -43,7 +34,7 @@ def health_check():
     return {
         "status": "healthy",
         "message": "LamiGo Backend is Running",
-        "version": "1.0.0",
+        "version": settings.APP_VERSION,
     }
 
 

@@ -11,13 +11,21 @@ class DriverBase(BaseModel):
     """Base schema for driver data."""
     name: str
     phone_number: str
-    vehicle_type: str  # e.g., Bike, Van, Truck
+    vehicle_type: str
     is_active: bool = True
 
 
 class DriverCreate(DriverBase):
     """Schema for creating a new driver."""
     pass
+
+
+class DriverUpdate(BaseModel):
+    """Schema for updating a driver."""
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    vehicle_type: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class Driver(DriverBase):
@@ -28,3 +36,10 @@ class Driver(DriverBase):
 
     class Config:
         from_attributes = True
+
+
+class DriverLocation(BaseModel):
+    """Schema for driver location update."""
+    driver_id: int
+    latitude: float
+    longitude: float

@@ -1,15 +1,14 @@
 """
-LamiGo Package Endpoints
-Handles all package-related API operations
+LamiGo Trip/Package Endpoints
+Handles all trip and package-related API operations
 """
 
 from fastapi import APIRouter
 from datetime import datetime, timedelta
-from app.schemas import Package
+from app.schemas.trip_schemas import Package
 
 router = APIRouter()
 
-# Mock data for 5 LamiGo packages
 MOCK_PACKAGES: list[Package] = [
     Package(
         id=1,
@@ -59,7 +58,7 @@ MOCK_PACKAGES: list[Package] = [
 ]
 
 
-@router.get("/", response_model=list[Package])
+@router.get("/packages", response_model=list[Package])
 def get_packages():
     """
     Retrieve all packages.
@@ -68,7 +67,7 @@ def get_packages():
     return MOCK_PACKAGES
 
 
-@router.get("/{package_id}", response_model=Package)
+@router.get("/packages/{package_id}", response_model=Package)
 def get_package(package_id: int):
     """
     Retrieve a specific package by ID.
@@ -79,7 +78,7 @@ def get_package(package_id: int):
     return {"error": "Package not found"}
 
 
-@router.get("/tracking/{tracking_number}", response_model=Package)
+@router.get("/packages/tracking/{tracking_number}", response_model=Package)
 def get_package_by_tracking(tracking_number: str):
     """
     Retrieve a package by its tracking number.

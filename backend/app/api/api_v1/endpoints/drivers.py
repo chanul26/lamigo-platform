@@ -4,11 +4,10 @@ Handles all driver-related API operations
 """
 
 from fastapi import APIRouter
-from app.schemas import Driver
+from app.schemas.driver_schemas import Driver
 
 router = APIRouter()
 
-# Mock data for 3 LamiGo drivers
 MOCK_DRIVERS: list[Driver] = [
     Driver(
         id=1,
