@@ -17,7 +17,7 @@ class Settings:
     # Database Configuration
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
-        "postgresql://postgres:postgres@localhost:5432/lamigo_db"
+        "postgresql://postgres+psycopg:postgres@localhost:5432/lamigo_db"
     )
 
     # Security
