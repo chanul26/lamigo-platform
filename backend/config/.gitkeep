@@ -1,2 +1,0 @@
-# Place serviceAccountKey.json here (from Firebase Console).
-# It is gitignored; see backend/.env.example for FIREBASE_SERVICE_ACCOUNT_PATH.
