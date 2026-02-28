@@ -15,7 +15,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# Ensure backend root is on path and load .env from backend/
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 os.chdir(BACKEND_ROOT)
@@ -34,12 +33,11 @@ def main() -> None:
         print("ERROR: DATABASE_URL is not set in .env", file=sys.stderr)
         sys.exit(1)
 
-    # Resolve path relative to backend root so it works from any cwd
     raw_path = (FIREBASE_SERVICE_ACCOUNT_PATH or "").strip().strip('"\'')
     if not raw_path:
         print(
             "ERROR: FIREBASE_SERVICE_ACCOUNT_PATH is not set in .env\n"
-            "  Set it in backend/.env, e.g.: FIREBASE_SERVICE_ACCOUNT_PATH=config/serviceAccountKey.json",
+            "  Set it in backend/.env, e.g.: FIREBASE_SERVICE_ACCOUNT_PATH=credentials/serviceAccountKey.json",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -53,8 +51,8 @@ def main() -> None:
         )
         print(f"  Looked at: {resolved_path}", file=sys.stderr)
         print(
-            "  Put your key at backend/config/serviceAccountKey.json and in .env set:\n"
-            "  FIREBASE_SERVICE_ACCOUNT_PATH=config/serviceAccountKey.json",
+            "  Put your key at backend/credentials/serviceAccountKey.json and in .env set:\n"
+            "  FIREBASE_SERVICE_ACCOUNT_PATH=credentials/serviceAccountKey.json",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -64,20 +62,16 @@ def main() -> None:
     from firebase_admin import credentials, auth
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from app.db import Base, Organization, User
+    from app.models import Base, Organization, User
 
-    # Generate a secure password and keep for one-time display
     password = secrets.token_urlsafe(20)
     firebase_uid: Optional[str] = None
 
-# Initialize Firebase (idempotent)
     if not firebase_admin._apps:
         cred = credentials.Certificate(firebase_key_path)
         firebase_admin.initialize_app(cred)
 
-    # --- NEW INTELLIGENT CLEANUP ---
     try:
-        # Check if the user already exists
         existing_user = auth.get_user_by_email(ADMIN_EMAIL)
         print(f"⚠️  Found existing Firebase user {ADMIN_EMAIL} (UID: {existing_user.uid})")
         print(f"🔄 Deleting it to ensure a fresh sync with Docker...")
@@ -87,7 +81,6 @@ def main() -> None:
     except Exception as e:
         print(f"ERROR: Could not check/delete existing user: {e}", file=sys.stderr)
         sys.exit(1)
-    # -------------------------------
 
     try:
         user_record = auth.create_user(

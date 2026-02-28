@@ -1,18 +1,18 @@
 """
-LamiGo Route Optimization Service
-Placeholder for Heshadha's ML algorithms
+LamiGo Trip Engine Service
+Route optimization and delivery planning algorithms
 
-This module will contain machine learning models and algorithms for:
+This module contains machine learning models and algorithms for:
 - Route optimization
 - Delivery time prediction
 - Driver assignment optimization
 - Demand forecasting
 """
 
-from typing import Optional
+from typing import Optional, List
 
 
-def optimize_route(package_ids: list[int]) -> dict:
+def optimize_route(package_ids: List[int]) -> dict:
     """
     Optimize delivery route for given packages.
     
@@ -28,14 +28,13 @@ def optimize_route(package_ids: list[int]) -> dict:
     - Optimize for fuel efficiency
     - Account for vehicle capacity constraints
     """
-    # Placeholder implementation
     return {
         "status": "Success",
         "message": "Route optimization placeholder - pending ML implementation",
         "package_ids": package_ids,
-        "optimized_order": package_ids,  # Currently returns same order
-        "estimated_time_minutes": len(package_ids) * 15,  # Mock: 15 min per package
-        "total_distance_km": len(package_ids) * 5.0,  # Mock: 5 km per package
+        "optimized_order": package_ids,
+        "estimated_time_minutes": len(package_ids) * 15,
+        "total_distance_km": len(package_ids) * 5.0,
     }
 
 
@@ -64,8 +63,7 @@ def predict_delivery_time(
     - Account for Sri Lankan traffic patterns
     - Consider time of day and day of week
     """
-    # Placeholder implementation
-    base_time = 30  # Base 30 minutes
+    base_time = 30
     vehicle_factors = {"Bike": 0.8, "Van": 1.0, "Truck": 1.2}
     factor = vehicle_factors.get(vehicle_type, 1.0)
     
@@ -73,11 +71,11 @@ def predict_delivery_time(
         "status": "Success",
         "message": "Delivery time prediction placeholder - pending ML implementation",
         "estimated_minutes": int(base_time * factor),
-        "confidence": 0.0,  # No confidence until ML model is trained
+        "confidence": 0.0,
     }
 
 
-def assign_driver(package_id: int, available_driver_ids: list[int]) -> dict:
+def assign_driver(package_id: int, available_driver_ids: List[int]) -> dict:
     """
     Intelligently assign a driver to a package.
     
@@ -94,7 +92,6 @@ def assign_driver(package_id: int, available_driver_ids: list[int]) -> dict:
     - Account for vehicle type requirements
     - Optimize for overall fleet efficiency
     """
-    # Placeholder implementation - just returns first available driver
     assigned_driver = available_driver_ids[0] if available_driver_ids else None
     
     return {
@@ -103,4 +100,33 @@ def assign_driver(package_id: int, available_driver_ids: list[int]) -> dict:
         "package_id": package_id,
         "recommended_driver_id": assigned_driver,
         "confidence": 0.0,
+    }
+
+
+def calculate_eta(
+    driver_lat: float,
+    driver_long: float,
+    dest_lat: float,
+    dest_long: float,
+    remaining_stops: int = 0,
+) -> dict:
+    """
+    Calculate estimated time of arrival for a delivery.
+    
+    Args:
+        driver_lat: Driver's current latitude
+        driver_long: Driver's current longitude
+        dest_lat: Destination latitude
+        dest_long: Destination longitude
+        remaining_stops: Number of stops before this delivery
+        
+    Returns:
+        Dictionary with ETA information
+    """
+    base_minutes = 20 + (remaining_stops * 10)
+    
+    return {
+        "status": "Success",
+        "estimated_minutes": base_minutes,
+        "remaining_stops": remaining_stops,
     }

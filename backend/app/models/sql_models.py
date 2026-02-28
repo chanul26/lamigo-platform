@@ -1,9 +1,13 @@
-"""LamiGo multi-tenant schema: organizations and users."""
+"""
+LamiGo PostgreSQL Models
+SQLAlchemy ORM models for the lamigo_db schema
+"""
+
 from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, String, Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declarative_base
 
-from app.db.base import Base
+Base = declarative_base()
 
 
 class Organization(Base):
@@ -24,7 +28,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     firebase_uid = Column(String(128), nullable=False, unique=True)
     org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
-    role = Column(String(64), nullable=False)  # e.g. SUPER_ADMIN, ADMIN, STAFF
+    role = Column(String(64), nullable=False)
     email = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -11,7 +11,6 @@ Or use this file:
     uvicorn main:app --reload
 """
 
-# Re-export the app from the new location for backward compatibility
 from app.main import app
 
 __all__ = ["app"]
