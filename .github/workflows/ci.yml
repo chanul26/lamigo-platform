@@ -21,23 +21,25 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    # C. Create a dummy .env file for the test
-    # (We don't put real secrets in GitHub for a simple build test)
+    # C. Create a dummy .env file in the ROOT (required by docker-compose)
     - name: Create Dummy Env File
       run: |
-        cd backend
-        echo "DATABASE_URL=postgresql://user:password@db:5432/lamigo_test" >> .env
-        echo "FIREBASE_SERVICE_ACCOUNT_PATH=config/serviceAccountKey.json" >> .env
-    
-    # D. Try to Build the Docker Container
-    # If your Dockerfile is broken, this step will FAIL and alert you.
+        echo "DB_USER=postgres" >> .env
+        echo "DB_PASSWORD=password" >> .env
+        echo "DB_PORT=5432" >> .env
+        echo "DB_NAME=lamigo_db" >> .env
+        echo "SECRET_KEY=ci-test-key-123" >> .env
+        echo "DATABASE_URL=postgresql+psycopg://postgres:password@db:5432/lamigo_db" >> .env
+
+    # D. Build the Docker Image
     - name: Build Docker Image
       run: |
         docker compose build backend
 
-    # E. (Optional) Run a simple script check
-    # This fires up the container and checks if Python can start without crashing
+    # E. Verify Backend Starts
     - name: Verify Backend Starts
       run: |
         docker compose up -d backend
+        # Give it a second to initialize
+        sleep 5
         docker compose exec -T backend python --version
