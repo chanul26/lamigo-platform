@@ -27,6 +27,9 @@ ehthumbs.db
 .cursorignore
 .cursorindexingignore
 
+# Google Project IDX / Antigravity
+.agents/
+
 # ============================================
 # Environment Variables (NEVER COMMIT)
 # ============================================
