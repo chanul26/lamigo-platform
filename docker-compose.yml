@@ -1,15 +1,32 @@
 services:
-  backend:  # Changed from 'api' to 'backend'
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: lamigo-backend  # Changed container name too
+    container_name: lamigo-backend
     restart: always
     ports:
       - "8000:8000"
+      
+    # --- Environment Variables Injection ---
+    # This tells Docker to swallow the entire root .env file automatically.
+    # This ensures your SECRET_KEY and future Firebase credentials are securely 
+    # passed into the container without having to list them out one by one.
+    env_file:
+      - .env  
+      
     environment:
+      # --- Docker Network Override ---
+      # We explicitly override the DATABASE_URL here. Because the app is trapped 
+      # inside a Docker container, it cannot use 'localhost' to find your Mac's DB.
+      # 'host.docker.internal' acts as the secure bridge to your native PostgreSQL.
       - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@host.docker.internal:${DB_PORT}/${DB_NAME}
+      
     volumes:
+      # --- Live Reload Mount ---
+      # Maps your local backend folder to the container's /app folder.
+      # This allows FastAPI (Uvicorn) to instantly reload when you save a file.
       - ./backend:/app
+      # Prevents Docker from overwriting your Mac's virtual environment
       - /app/env
       - /app/.venv

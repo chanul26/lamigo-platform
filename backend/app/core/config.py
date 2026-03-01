@@ -1,27 +1,34 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Load environment variables from the root .env file into the OS context
-load_dotenv()
+# --- Environment Variable Loader ---
+env_path = find_dotenv()
+load_dotenv(env_path)
 
 class Settings:
     """
     Centralized configuration management for the LamiGo API.
-    All environment variables and global constants are defined and accessed through this class.
+    Strictly enforces that required environment variables are present.
     """
     # System Metadata
     PROJECT_NAME: str = "LamiGo API"
     PROJECT_DESCRIPTION: str = "Last-Mile Delivery Optimization Platform"
     VERSION: str = "1.0.0"
 
-    # Database Configuration
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", 
-        "postgresql://postgres+psycopg:postgres@localhost:5432/lamigo_db"
-    )
+    # Variables (No fallback defaults allowed)
+    DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+    SECRET_KEY: str | None = os.getenv("SECRET_KEY")
 
-    # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "default-insecure-key")
+    def __init__(self):
+        # --- Strict Validation ---
+        # If the .env file didn't load properly, these will be None.
+        # We explicitly crash the application here so we know immediately.
+        if not self.DATABASE_URL:
+            raise ValueError("❌ CRITICAL ERROR: DATABASE_URL is missing! Check your .env file path.")
+        
+        if not self.SECRET_KEY:
+            raise ValueError("❌ CRITICAL ERROR: SECRET_KEY is missing! Check your .env file path.")
 
-# Global settings instance to be imported across the application
+# Global settings instance
+# This will trigger the __init__ validation the moment the server boots
 settings = Settings()
