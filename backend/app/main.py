@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
+import firebase_admin
+from firebase_admin import credentials
 
 # If the .env is missing, the app violently crashes on this exact line 
 # thanks to your strict Settings class in config.py!
@@ -19,11 +21,11 @@ async def lifespan(app: FastAPI):
 
     # 1. Environment Variables Check
     # If the code reached this line, config.py successfully found the .env file!
-    print("⏳ 1/2: Environment Variables Loaded Successfully.")
+    print("⏳ 1/3: Environment Variables Loaded Successfully.")
     print("   ✅ Security configurations locked.")
 
     # 2. Active Database Ping
-    print("⏳ 2/2: Checking PostgreSQL physical connection...")
+    print("⏳ 2/3: Checking PostgreSQL physical connection...")
     try:
         # Force a physical connection to PostgreSQL via the Async Engine
         async with engine.begin() as conn:
@@ -32,6 +34,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"   ❌ FATAL: Database connection failed! Error: {e}")
         # Crash the app immediately if the DB is down
+        raise e
+
+    # 3. Firebase Admin SDK Initialization
+    print("⏳ 3/3: Verifying Firebase Master Credentials...")
+    try:
+        # Prevent crashing during FastAPI hot-reloads
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+            firebase_admin.initialize_app(cred)
+        print("   ✅ FIREBASE ADMIN SDK INITIALIZED SUCCESSFULLY!")
+    except Exception as e:
+        print(f"   ❌ FATAL: Firebase initialization failed! Check your JSON key path. Error: {e}")
         raise e
         
     print("="*50)
