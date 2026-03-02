@@ -13,6 +13,7 @@
 .Trashes
 Thumbs.db
 ehthumbs.db
+.vscode/
 
 # JetBrains IDEs (IntelliJ, Android Studio, PyCharm)
 .idea/
