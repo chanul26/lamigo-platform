@@ -1,26 +1,47 @@
-# backend/Dockerfile
+# ==============================================================================
+# LamiGo Backend Dockerfile
+# ==============================================================================
 
-# 1. Base Image: Use a lightweight Python version matching your local setup
-FROM python:3.10-slim
+# --- Base Image ---
+# Using the 'slim' version of Python 3.13 to keep the container lightweight 
+# while still having the necessary Debian core to run the API.
+FROM python:3.13-slim
 
-# 2. Environment Setup:
-# PYTHONDONTWRITEBYTECODE: Prevents Python from writing .pyc files
-# PYTHONUNBUFFERED: Ensures logs are flushed directly to terminal
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# --- Environment Variables ---
+# PYTHONDONTWRITEBYTECODE: Prevents Python from cluttering the container with .pyc files
+# PYTHONUNBUFFERED: Forces Python to output logs immediately so they show up in Docker instantly
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_ROOT_USER_ACTION=ignore
 
-# 3. Work Directory: All commands will run inside this folder in the container
+# --- Working Directory ---
 WORKDIR /app
 
-# 4. Install Dependencies:
-# We copy requirements first to leverage Docker caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# --- System Dependencies ---
+# 'build-essential' and 'libpq-dev' are required by Debian to compile PostgreSQL 
+# drivers (psycopg) from source if a pre-compiled binary isn't available.
+# The 'rm -rf' line at the end cleans up the apt cache to keep the image size small.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# 5. Copy Project Code:
-# This copies everything from your local 'backend/' folder to '/app/' in the container
+# --- Python Dependencies ---
+# We copy ONLY the requirements.txt first. This utilizes Docker's "Layer Caching".
+# If you change a Python file, Docker skips this step. It only re-runs pip install 
+# if you actually add a new package to requirements.txt.
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# --- Application Code ---
+# Now we copy the rest of your LamiGo code into the container.
 COPY . .
 
-# 6. Run Command:
-# Starts the FastAPI server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]c
+# --- Port Exposure ---
+EXPOSE 8000
+
+# --- Execution Command ---
+# Runs the FastAPI server via Uvicorn. 
+# The '--reload' flag works perfectly with the 'volumes' mapping in our docker-compose.yml
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

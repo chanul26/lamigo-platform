@@ -1,37 +1,32 @@
-# docker-compose.yml
-version: '3.8'
-
 services:
-  # Service 1: The Backend API
   backend:
-    build: ./backend
-    container_name: lamigo_backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./backend:/app  # Live Sync: Changes in VS Code update the container instantly
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lamigo-backend
+    restart: always
     ports:
       - "8000:8000"
+      
+    # --- Environment Variables Injection ---
+    # This tells Docker to swallow the entire root .env file automatically.
+    # This ensures your SECRET_KEY and future Firebase credentials are securely 
+    # passed into the container without having to list them out one by one.
     env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-    # This ensures the container can find the firebase key
+      - .env  
+      
     environment:
-      - FIREBASE_SERVICE_ACCOUNT_PATH=config/serviceAccountKey.json
-
-  # Service 2: The PostgreSQL Database
-  db:
-    image: postgres:15
-    container_name: lamigo_db
-    restart: always
+      # --- Docker Network Override ---
+      # We explicitly override the DATABASE_URL here. Because the app is trapped 
+      # inside a Docker container, it cannot use 'localhost' to find your Mac's DB.
+      # 'host.docker.internal' acts as the secure bridge to your native PostgreSQL.
+      - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@host.docker.internal:${DB_PORT}/${DB_NAME}
+      
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=lamigo_db
-    ports:
-      - "5432:5432"
-
-volumes:
-  postgres_data:
+      # --- Live Reload Mount ---
+      # Maps your local backend folder to the container's /app folder.
+      # This allows FastAPI (Uvicorn) to instantly reload when you save a file.
+      - ./backend:/app
+      # Prevents Docker from overwriting your Mac's virtual environment
+      - /app/env
+      - /app/.venv

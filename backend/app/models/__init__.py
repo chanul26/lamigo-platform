@@ -1,12 +1,20 @@
-# LamiGo Database Models
-from app.models.sql_models import Base, Organization, User
-from app.models.enums import UserRole, PackageStatus, VehicleType
+# app/models/__init__.py
 
-__all__ = [
-    "Base",
-    "Organization",
-    "User",
-    "UserRole",
-    "PackageStatus",
-    "VehicleType",
-]
+# 1. Import the Base
+from .sql_models import Base
+
+# 2. Import ALL your Enums
+from .enums import (
+    UserRole, VehicleType, DriverStatus, LocationType, PreferenceStatus,
+    PackageStatus, TripStatus, TaskStatus, FailureType, InstructionType,
+    InstructionCreator, IncidentType, IncidentStatus, ResponseType,
+    ResponseStatus, PaymentMethod, SMSCategory, SMSStatus
+)
+
+# 3. Import ALL 17 of your Entities so Alembic can "see" them
+from .sql_models import (
+    SuperAdmin, Organization, Branch, User, Driver, 
+    DriverFinancialProfile, TripCommission, DriverSettlement,
+    Recipient, Package, DeliveryPreference, Trip, DeliveryTask,
+    TaskInstruction, DeliveryContext, Incident, IncidentResponseAssignment
+)

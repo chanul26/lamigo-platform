@@ -2,13 +2,18 @@
 # LamiGo Backend .gitignore
 # ============================================
 
-# Environment & Secrets
+# Environment & Secrets (CRITICAL)
 .env
+.env.*
 *.env.local
 
-# Firebase credentials
-credentials/*.json
+# Firebase & Master Credentials
+credentials/*
+!credentials/.gitkeep
 config/*.json
+
+# OS Junk
+.DS_Store
 
 # Python
 __pycache__/
@@ -49,5 +54,5 @@ env/
 .coverage
 htmlcov/
 
-# Alembic
+# Alembic Migrations
 alembic/versions/*.pyc

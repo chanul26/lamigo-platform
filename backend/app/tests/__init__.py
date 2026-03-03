@@ -1,1 +1,0 @@
-# LamiGo Tests Module

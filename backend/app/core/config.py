@@ -1,45 +1,34 @@
-"""
-LamiGo Configuration Module
-Manages environment variables using pydantic-settings
-"""
+import os
+from dotenv import load_dotenv, find_dotenv
 
-from typing import List, Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
+# --- Environment Variable Loader ---
+env_path = find_dotenv()
+load_dotenv(env_path)
 
+class Settings:
+    """
+    Centralized configuration management for the LamiGo API.
+    Strictly enforces that required environment variables are present.
+    """
+    # System Metadata
+    PROJECT_NAME: str = "LamiGo API"
+    PROJECT_DESCRIPTION: str = "Last-Mile Delivery Optimization Platform"
+    VERSION: str = "1.0.0"
 
-class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
+    # Variables (No fallback defaults allowed)
+    DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+    SECRET_KEY: str | None = os.getenv("SECRET_KEY")
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore",
-    )
+    def __init__(self):
+        # --- Strict Validation ---
+        # If the .env file didn't load properly, these will be None.
+        # We explicitly crash the application here so we know immediately.
+        if not self.DATABASE_URL:
+            raise ValueError("❌ CRITICAL ERROR: DATABASE_URL is missing! Check your .env file path.")
+        
+        if not self.SECRET_KEY:
+            raise ValueError("❌ CRITICAL ERROR: SECRET_KEY is missing! Check your .env file path.")
 
-    # Application
-    APP_NAME: str = "LamiGo API"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = False
-
-    # Database
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/lamigo"
-
-    # Firebase
-    FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = "credentials/serviceAccountKey.json"
-
-    # CORS Origins
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-    ]
-
-    # JWT Settings (for future use)
-    SECRET_KEY: str = "your-secret-key-change-in-production"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-
-
+# Global settings instance
+# This will trigger the __init__ validation the moment the server boots
 settings = Settings()
