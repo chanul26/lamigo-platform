@@ -18,16 +18,20 @@ class Settings:
     # Variables (No fallback defaults allowed)
     DATABASE_URL: str | None = os.getenv("DATABASE_URL")
     SECRET_KEY: str | None = os.getenv("SECRET_KEY")
+    FIREBASE_CREDENTIALS_PATH: str | None = os.getenv("FIREBASE_CREDENTIALS_PATH")
 
     def __init__(self):
         # --- Strict Validation ---
         # If the .env file didn't load properly, these will be None.
         # We explicitly crash the application here so we know immediately.
         if not self.DATABASE_URL:
-            raise ValueError("❌ CRITICAL ERROR: DATABASE_URL is missing! Check your .env file path.")
+            raise ValueError("❌ CRITICAL ERROR: DATABASE_URL is missing! Check your .env file.")
         
         if not self.SECRET_KEY:
-            raise ValueError("❌ CRITICAL ERROR: SECRET_KEY is missing! Check your .env file path.")
+            raise ValueError("❌ CRITICAL ERROR: SECRET_KEY is missing! Check your .env file.")
+            
+        if not self.FIREBASE_CREDENTIALS_PATH:
+            raise ValueError("❌ CRITICAL ERROR: FIREBASE_CREDENTIALS_PATH is missing! Check your .env file.")
 
 # Global settings instance
 # This will trigger the __init__ validation the moment the server boots
