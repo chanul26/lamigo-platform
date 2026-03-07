@@ -6,6 +6,7 @@ from sqlalchemy import text
 # thanks to your strict Settings class in config.py!
 from app.core.config import settings
 from app.core.database import engine
+from app.api.api_v1.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,6 +53,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Register all v1 API routes under /api/v1 prefix
+app.include_router(api_router, prefix="/api/v1")
 @app.get("/", tags=["Health Check"])
 def read_root():
     return {
