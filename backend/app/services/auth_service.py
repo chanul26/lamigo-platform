@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
@@ -96,3 +97,30 @@ async def get_current_db_user(uid: str, db: AsyncSession) -> dict:
         status_code=status.HTTP_400_BAD_REQUEST,
         detail="Unknown user role detected."
     )
+
+
+async def process_user_login(uid: str, db: AsyncSession, device_id: str | None = None) -> dict:
+    """
+    Handles the write operations for a user login.
+    Updates timestamps, handles device IDs, and returns the formatted profile.
+    """
+    # 1. Check if user is a SuperAdmin to update their specific timestamp
+    admin_query = await db.execute(select(SuperAdmin).where(SuperAdmin.admin_id == uid))
+    admin = admin_query.scalar_one_or_none()
+    
+    if admin:
+        admin.last_access_at = datetime.now(timezone.utc)
+        try:
+            await db.commit()
+        except Exception as e:
+            print(f"⚠️ Warning: Could not update last_access_at for admin {uid}: {e}")
+            await db.rollback()
+            
+    # 2. Future-proofing: Placeholder for standard Users/Drivers
+    # If you add a 'last_login' or 'device_id' column to the User table later, 
+    # you would add that update logic right here!
+    else:
+        pass 
+
+    # 3. Fetch and return the fully formatted profile using the safe read-only function
+    return await get_current_db_user(uid=uid, db=db)

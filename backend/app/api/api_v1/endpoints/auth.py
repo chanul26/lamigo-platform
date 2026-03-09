@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import verify_firebase_token
 from app.services import auth_service
-from app.schemas.user import CurrentUserResponse
+from app.schemas.user import CurrentUserResponse, LoginRequest
 
 # Create the router for Auth endpoints
 router = APIRouter()
@@ -36,4 +36,37 @@ async def get_current_user_profile(
     
     # FastAPI and Pydantic will automatically look at the 'role' in user_profile
     # and use the correct schema (SuperAdmin, StationManager, or Driver) to format the JSON!
+    return user_profile
+
+
+@router.post("/login", response_model=CurrentUserResponse)
+async def login_user(
+    # The optional JSON body payload
+    login_data: LoginRequest,
+    
+    # 1. The Padlock
+    token_payload: dict = Depends(verify_firebase_token),
+    
+    # 2. The Database
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Authenticates a user and performs login database writes (e.g., updating timestamps).
+    Should be called EXACTLY ONCE by the frontend after a successful Firebase login.
+    """
+    uid = token_payload.get("uid")
+    
+    if not uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token payload is missing UID."
+        )
+
+    # Call the new write-enabled service function
+    user_profile = await auth_service.process_user_login(
+        uid=uid, 
+        db=db, 
+        device_id=login_data.device_id
+    )
+    
     return user_profile
