@@ -2,15 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import your custom modules
+from app.core.database import get_db
 from app.core.security import verify_firebase_token
 from app.services import auth_service
 from app.schemas.user import CurrentUserResponse
-from app.core.database import SessionLocal
-# --- Database Dependency ---
-# (If you already have this in a deps.py file, you can import it instead)
-async def get_db():
-    async with SessionLocal() as session:
-        yield session
 
 # Create the router for Auth endpoints
 router = APIRouter()

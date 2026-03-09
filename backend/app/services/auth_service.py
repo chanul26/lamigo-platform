@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
@@ -10,7 +9,8 @@ from app.models.enums import UserRole
 async def get_current_db_user(uid: str, db: AsyncSession) -> dict:
     """
     Takes a verified Firebase UID and searches the PostgreSQL database.
-    Updates the 'last_access_at' for SuperAdmins and returns the profile.
+    Returns the profile as a dictionary to be validated by Pydantic.
+    (Read-only, no database commits are performed here).
     """
     
     # ---------------------------------------------------------
@@ -20,17 +20,6 @@ async def get_current_db_user(uid: str, db: AsyncSession) -> dict:
     admin = admin_query.scalar_one_or_none()
     
     if admin:
-        # --- Update Last Access Heartbeat (SuperAdmin Only) ---
-        admin.last_access_at = datetime.now(timezone.utc)
-        
-        try:
-            # We commit the timestamp update immediately
-            await db.commit()
-        except Exception as e:
-            # If DB update fails, we log it but don't block the login
-            print(f"⚠️ Warning: Could not update last_access_at for admin {uid}: {e}")
-            await db.rollback()
-
         # Map 'admin_id' to 'user_id' to satisfy Pydantic Schemas
         return {
             "user_id": admin.admin_id,
