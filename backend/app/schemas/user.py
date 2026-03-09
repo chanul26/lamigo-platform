@@ -17,6 +17,14 @@ class TokenRequest(BaseModel):
     firebase_token: str = Field(..., description="The JWT token from Firebase Auth")
 
 
+class LoginRequest(BaseModel):
+    """
+    Optional payload sent by the frontend immediately after Firebase login.
+    Used for storing device tokens for push notifications or analytics.
+    """
+    device_id: Optional[str] = None
+
+
 # ==========================================
 # 2. OUTBOUND HIERARCHY (Responses)
 # ==========================================
