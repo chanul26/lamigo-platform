@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
-import 'splash_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() => runApp(
-      const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: SplashScreen(),
-      ),
-    );
+import 'Features/Splash/Presentation/splash_screen.dart';
+import 'services/api_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await ApiService().init();
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: SplashScreen(),
+    ),
+  );
+}

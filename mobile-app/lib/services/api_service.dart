@@ -1,20 +1,61 @@
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../core/constants.dart';
 
 class ApiService {
-  Future<bool> login(String driverId, String password) async {
-    try {
-      // We override the base URL just for the health check
-      final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/health'));
-      if (response.statusCode == 200) {
-        debugPrint('Backend Connected!');
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+  ApiService._internal();
+
+  late final Dio _dio;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  static const String _tokenKey = 'lamigo_driver_token';
+
+  /// Call once in main() before runApp().
+  Future<void> init() async {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: AppConstants.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
+
+    // Interceptor: inject Bearer token into every request automatically.
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: _tokenKey);
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (DioException error, handler) {
+          // Centralised error logging; rethrow for callers to handle.
+          return handler.next(error);
+        },
+      ),
+    );
   }
+
+  // -----------------------------------------------------------------------
+  // Token helpers
+  // -----------------------------------------------------------------------
+
+  Future<void> saveToken(String token) =>
+      _storage.write(key: _tokenKey, value: token);
+
+  Future<String?> readToken() => _storage.read(key: _tokenKey);
+
+  Future<void> deleteToken() => _storage.delete(key: _tokenKey);
+
+  // -----------------------------------------------------------------------
+  // Expose the configured Dio instance for feature-level calls
+  // -----------------------------------------------------------------------
+
+  Dio get dio => _dio;
 }
