@@ -1,10 +1,25 @@
 services:
+  db:
+    image: postgres:15
+    container_name: lamigo-db
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: lamigo-backend
     restart: always
+    depends_on:
+      - db
     ports:
       - "8000:8000"
       
@@ -14,7 +29,7 @@ services:
       
     environment:
       # --- Docker Network Override ---
-      - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@host.docker.internal:${DB_PORT}/${DB_NAME}
+      - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}
       
       # --- Docker Path Override ---
       # Inside the container, the 'backend' folder IS the root directory (/app).
@@ -26,3 +41,6 @@ services:
       - ./backend:/app
       - /app/env
       - /app/.venv
+
+volumes:
+  postgres_data:
