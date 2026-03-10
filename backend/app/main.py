@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 import firebase_admin
 from firebase_admin import credentials
@@ -62,6 +63,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# --- CORS Middleware ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- 2. Register the Master Router ---
 # We apply the global "/api/v1" prefix here. 
 # Combined with router.py, the final URL becomes /api/v1/auth/me
@@ -73,3 +83,7 @@ def read_root():
         "message": f"Welcome to the {settings.PROJECT_NAME}",
         "status": "online"
     }
+
+@app.get("/api/health", tags=["Health Check"])
+def health_check():
+    return {"status": "ok", "message": "LamiGo API is running"}
