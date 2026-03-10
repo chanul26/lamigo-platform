@@ -41,7 +41,7 @@ async def get_current_user_profile(
 
 @router.post("/login", response_model=CurrentUserResponse)
 async def login_user(
-    # The optional JSON body payload
+    # The optional JSON body payload from the frontend
     login_data: LoginRequest,
     
     # 1. The Padlock
@@ -51,7 +51,8 @@ async def login_user(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Authenticates a user and performs login database writes (e.g., updating timestamps).
+    Authenticates a user and performs login database writes.
+    Saves the device FCM token for mobile push notifications.
     Should be called EXACTLY ONCE by the frontend after a successful Firebase login.
     """
     uid = token_payload.get("uid")
@@ -66,7 +67,7 @@ async def login_user(
     user_profile = await auth_service.process_user_login(
         uid=uid, 
         db=db, 
-        device_id=login_data.device_id
+        fcm_token=login_data.fcm_token  # <--- Updated from device_id to fcm_token
     )
     
     return user_profile

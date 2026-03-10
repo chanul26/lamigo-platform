@@ -50,9 +50,6 @@ class BranchStaffBase(AuthIdentityBase):
     preferred_name: Optional[str] = None
     email: Optional[EmailStr] = None
     is_active: bool
-    
-    # --- ADDED LATER: Include in the profile response ---
-    fcm_token: Optional[str] = Field(None, description="Added later for push notifications")
 
 
 # --- Level 3: The Children (Final API Responses) ---
