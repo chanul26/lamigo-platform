@@ -16,10 +16,23 @@ async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
+  // Read auth token from localStorage (guarded for SSR environments)
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('lamigo_station_token')
+      : null;
+
+  const authHeaders: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
+      // Caller-supplied headers take final precedence
+      ...(options.headers as Record<string, string>),
     },
   };
 
