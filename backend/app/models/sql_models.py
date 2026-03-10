@@ -81,6 +81,10 @@ class User(Base):
     nic_number = Column(String(20), nullable=False, unique=True) # National Identity Card
     email = Column(String(255), unique=True, nullable=True) # Optional email
     is_active = Column(Boolean, default=True) # Soft-delete flag (e.g., for fired employees)
+    
+    # --- ADDED LATER: Push Notification Support ---
+    fcm_token = Column(String(255), nullable=True) # Added later for Firebase Cloud Messaging (Mobile push notifications)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
