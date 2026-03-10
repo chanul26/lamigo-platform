@@ -56,7 +56,7 @@ async def get_current_db_user(uid: str, db: AsyncSession) -> dict:
         "preferred_name": user.preferred_name,
         "email": user.email,
         "is_active": user.is_active,
-        "fcm_token": user.fcm_token  # <--- Included the new token for Pydantic
+        # NOTICE: fcm_token has been completely removed from here!
     }
 
     # ---------------------------------------------------------
