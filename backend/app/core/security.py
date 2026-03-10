@@ -19,10 +19,17 @@ def verify_firebase_token(credentials: HTTPAuthorizationCredentials = Depends(to
     raw_token = credentials.credentials
     
     try:
-        # Ask Google's servers if this token is real and hasn't expired
-        decoded_token = auth.verify_id_token(raw_token)
+        # Ask Google's servers if this token is real, hasn't expired, AND hasn't been revoked
+        decoded_token = auth.verify_id_token(raw_token, check_revoked=True)
         return decoded_token
         
+    except auth.RevokedIdTokenError:
+        # This triggers instantly if the user has hit the /logout endpoint
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session has been revoked. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except auth.ExpiredIdTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
