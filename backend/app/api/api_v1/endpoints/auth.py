@@ -67,7 +67,33 @@ async def login_user(
     user_profile = await auth_service.process_user_login(
         uid=uid, 
         db=db, 
-        fcm_token=login_data.fcm_token  # <--- Updated from device_id to fcm_token
+        fcm_token=login_data.fcm_token
     )
     
     return user_profile
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout_user(
+    # 1. The Padlock
+    token_payload: dict = Depends(verify_firebase_token),
+    
+    # 2. The Database
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Securely logs out the user.
+    Clears their FCM push notification token from the database and revokes active Firebase sessions.
+    """
+    uid = token_payload.get("uid")
+    
+    if not uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token payload is missing UID."
+        )
+
+    # Call the service function to handle the database and Firebase teardown
+    await auth_service.process_user_logout(uid=uid, db=db)
+    
+    return {"message": "Successfully logged out. Push notifications disabled."}

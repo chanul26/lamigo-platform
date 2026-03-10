@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
+from firebase_admin import auth as firebase_auth
 
 # Import your SQLAlchemy models and Enums
 from app.models.sql_models import SuperAdmin, User, Driver
@@ -127,3 +128,27 @@ async def process_user_login(uid: str, db: AsyncSession, fcm_token: str | None =
 
     # 3. Fetch and return the fully formatted profile using the safe read-only function
     return await get_current_db_user(uid=uid, db=db)
+
+
+async def process_user_logout(uid: str, db: AsyncSession) -> None:
+    """
+    Handles the write operations for a user logout.
+    Clears the FCM token to stop push notifications and revokes Firebase sessions.
+    """
+    # 1. Clear the FCM token for standard Users (Managers and Drivers)
+    user_query = await db.execute(select(User).where(User.user_id == uid))
+    user = user_query.scalar_one_or_none()
+    
+    if user:
+        user.fcm_token = None
+        try:
+            await db.commit()
+        except Exception as e:
+            print(f"⚠️ Warning: Could not clear fcm_token for user {uid}: {e}")
+            await db.rollback()
+
+    # 2. Revoke Firebase refresh tokens globally (Security Best Practice)
+    try:
+        firebase_auth.revoke_refresh_tokens(uid)
+    except Exception as e:
+        print(f"⚠️ Warning: Could not revoke Firebase tokens for {uid}: {e}")
