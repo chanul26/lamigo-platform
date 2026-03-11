@@ -42,7 +42,7 @@ const mockTrips: Trip[] = [
     packageCount: 5,
     route: 'Negombo - Jaffna',
     date: '2025-03-11'
-  },
+  }
 
 ]
 
