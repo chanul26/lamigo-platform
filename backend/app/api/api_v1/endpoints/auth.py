@@ -7,36 +7,27 @@ from app.core.security import verify_firebase_token
 from app.services import auth_service
 from app.schemas.user import CurrentUserResponse, LoginRequest
 
+# --- ADDED: Import our new centralized dependency chain ---
+from app.api.deps import get_current_user
+
 # Create the router for Auth endpoints
 router = APIRouter()
 
 @router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user_profile(
-    # 1. The Padlock: Intercepts the header, verifies with Google, returns the payload
-    token_payload: dict = Depends(verify_firebase_token),
-    
-    # 2. The Database: Opens a secure, temporary connection to PostgreSQL
-    db: AsyncSession = Depends(get_db)
+    # --- CHANGED: Replaced the manual verify_firebase_token and db session ---
+    # The new Gatekeeper handles the token verification, DB lookup, and error throwing natively!
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Retrieves the profile of the currently logged-in user.
     Requires a valid Firebase Bearer token in the Authorization header.
     """
-    # Extract the uid from the verified Firebase payload
-    uid = token_payload.get("uid")
+    # --- CHANGED: Deleted all the repetitive manual UID extraction and DB querying ---
     
-    if not uid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token payload is missing UID."
-        )
-
-    # 3. The Brain: Look up the user in PostgreSQL and format the data
-    user_profile = await auth_service.get_current_db_user(uid=uid, db=db)
-    
-    # FastAPI and Pydantic will automatically look at the 'role' in user_profile
+    # FastAPI and Pydantic will automatically look at the 'role' in current_user
     # and use the correct schema (SuperAdmin, StationManager, or Driver) to format the JSON!
-    return user_profile
+    return current_user
 
 
 @router.post("/login", response_model=CurrentUserResponse)
@@ -55,6 +46,8 @@ async def login_user(
     Saves the device FCM token for mobile push notifications.
     Should be called EXACTLY ONCE by the frontend after a successful Firebase login.
     """
+    # NOTE: We keep the manual extraction here because this is a WRITE operation.
+    # It specifically needs the raw DB session to update the FCM token and last_access_at timestamp.
     uid = token_payload.get("uid")
     
     if not uid:
@@ -85,6 +78,8 @@ async def logout_user(
     Securely logs out the user.
     Clears their FCM push notification token from the database and revokes active Firebase sessions.
     """
+    # NOTE: We keep the manual extraction here as well to handle 
+    # the specific database write operation of clearing the fcm_token.
     uid = token_payload.get("uid")
     
     if not uid:
