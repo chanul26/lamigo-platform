@@ -61,9 +61,9 @@ export default function OngoingTripsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [trips] = useState(mockOngoingTrips)
 
-  const filteredTrips = filteredTrips(trip => 
+  const filteredTrips = trips.filter(trip => 
     trip.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.driver.toLowerCase().includes(searchTerm.toLowerCase())
+    trip.driver.toLowerCase().includes(driver.toLowerCase())
   )
 
   return 
