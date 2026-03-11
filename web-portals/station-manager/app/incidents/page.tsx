@@ -41,7 +41,7 @@ const categoryConfig = {
   other: { color: 'bg-[#f3f4f6] text-[#64748b]', icon: AlertTriangle }
 }
 
-export default function IncidentsPageTerm() {
+export default function IncidentsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [incidents] = useState(mockIncidents)
 
