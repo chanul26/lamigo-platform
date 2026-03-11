@@ -42,7 +42,17 @@ const mockTrips: Trip[] = [
     packageCount: 5,
     route: 'Negombo - Jaffna',
     date: '2025-03-11'
+  },
+    {
+    id: '#TR-2025-004',
+    status: 'In Progress',
+    driver: 'Sunil Weerasinghe',
+    driverInitials: 'SW',
+    packageCount: 15,
+    route: 'Kurunegala - Anuradhapura',
+    date: '2025-03-10'
   }
+  
 
 ]
 
