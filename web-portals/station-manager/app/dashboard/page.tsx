@@ -69,7 +69,10 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-
+				  
+				                <div className="w-full bg-[#f3f4f6] rounded-full h-2.5">
+                <div className="bg-[#10b981] h-2.5 rounded-full" style={{ width: '92%' }}></div>
+              </div>
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-[#1e293b] mb-4">Performance Overview</h2>
           <div className="space-y-5">
