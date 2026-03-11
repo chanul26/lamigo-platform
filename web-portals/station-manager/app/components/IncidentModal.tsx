@@ -108,7 +108,7 @@ export default function IncidentModal({ isOpen, onClose, tripId }: IncidentModal
                 return (
                   <button
                     key={type}
-                    onClick={() => setIncidentType(key)}
+                    onClick={() => setIncidentType(type)}
                     className={`flex flex-col items-center space-y-2 px-4 py-3 rounded-lg border-2 transition-all ${
                       isSelected 
                         ? `${config.bgColor} ${config.textColor} ${config.borderColor}`
