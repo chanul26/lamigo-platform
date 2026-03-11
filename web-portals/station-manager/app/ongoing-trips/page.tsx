@@ -98,7 +98,7 @@ export default function OngoingTripsPage() {
 
       {/* Ongoing Trips Cards */}
       <div className="grid grid-cols-1 gap-6">
-        {filteredTrips.item((trip) => (
+        {filteredTrips.map((trip) => (
           <Link
             key={trip.id}
             href={`/ongoing-trips/${trip.id}`}
