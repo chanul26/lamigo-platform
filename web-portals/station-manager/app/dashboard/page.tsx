@@ -1,225 +1,109 @@
-'use client';
 
-import {
-  Package,
-  Wallet,
-  Truck,
-  MapPin,
-  Plus,
-  ArrowRight,
-  Loader2,
-} from 'lucide-react';
-import Link from 'next/link';
 
-interface StatCard {
-  title: string;
-  icon: React.ReactNode;
-  color: string;
-  description: string;
-}
+'use client'
 
-const statCards: StatCard[] = [
-  {
-    title: 'Pending Deliveries',
-    icon: <Package size={24} />,
-    color: 'var(--status-pending)',
-    description: 'Packages awaiting dispatch',
-  },
-  {
-    title: 'In Transit',
-    icon: <Truck size={24} />,
-    color: 'var(--status-in-transit)',
-    description: 'Active deliveries',
-  },
-  {
-    title: 'Pending Settlements',
-    icon: <Wallet size={24} />,
-    color: 'var(--status-failed)',
-    description: 'Driver payments due',
-  },
-  {
-    title: 'Active Trips',
-    icon: <MapPin size={24} />,
-    color: 'var(--status-delivered)',
-    description: 'Ongoing routes',
-  },
-];
+import { Truck, Package, Users, AlertTriangle, TrendingUp, Clock } from 'lucide-react'
 
-const quickActions = [
-  {
-    label: 'Create New Trip',
-    icon: <Plus size={20} />,
-    href: '/trips',
-    primary: true,
-  },
-  {
-    label: 'Add New Package',
-    icon: <Plus size={20} />,
-    href: '/packages',
-    primary: false,
-  },
-  {
-    label: 'Process Settlements',
-    icon: <ArrowRight size={20} />,
-    href: '/settlements',
-    primary: false,
-  },
-];
+const stats = [
+  { name: 'Active Trips', value: '12', icon: Truck, change: '+2', changeType: 'increase' },
+  { name: 'Packages in Transit', value: '145', icon: Package, change: '+18', changeType: 'increase' },
+  { name: 'Active Drivers', value: '24', icon: Users, change: '-1', changeType: 'decrease' },
+  { name: 'Incidents Today', value: '3', icon: AlertTriangle, change: '-2', changeType: 'decrease' },
+]
 
 export default function DashboardPage() {
   return (
-    <div className="p-8 animate-fade-in">
-      {/* Header */}
-      <div className="mb-8">
-        <h1
-          className="text-2xl font-semibold mb-2"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Welcome to LamiGo Logistics
-        </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Manage your deliveries, drivers, and settlements from one place.
-        </p>
-      </div>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold text-[#1e293b] mb-8">Dashboard</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((stat, index) => (
-          <div
-            key={index}
-            className="p-6 rounded-[var(--border-radius)] transition-all duration-200 hover:scale-[1.02]"
-            style={{
-              backgroundColor: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div
-                className="p-3 rounded-[var(--border-radius-sm)]"
-                style={{
-                  backgroundColor: `${stat.color}20`,
-                  color: stat.color,
-                }}
-              >
-                {stat.icon}
+        {stats.map((stat) => {
+          const Icon = stat.icon
+          return (
+            <div key={stat.name} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-[#2563eb]/10 rounded-xl">
+                  <Icon className="w-6 h-6 text-[#2563eb]" />
+                </div>
+                <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                  stat.changeType === 'increase' ? 'bg-[#10b981]/10 text-[#10b981]' : 'bg-[#ef4444]/10 text-[#ef4444]'
+                }`}>
+                  {stat.change}
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-[#1e293b]">{stat.value}</p>
+              <p className="text-[#64748b] text-sm mt-1">{stat.name}</p>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-[#1e293b] mb-4">Recent Trips</h2>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between py-3 border-b border-[#e9ecef] last:border-0">
+                <div>
+                  <p className="font-medium text-[#1e293b]">#TR-2025-00{i}</p>
+                  <p className="text-sm text-[#64748b]">Colombo → Kandy</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-[#64748b] flex items-center">
+                    <Clock className="w-4 h-4 mr-1" />
+                    {i * 15} min ago
+                  </span>
+				 
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-[#1e293b] mb-4">Performance Overview</h2>
+          <div className="space-y-5">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[#64748b]">On-Time Delivery</span>
+                <span className="font-semibold text-[#1e293b]">92%</span>
+              </div>
+
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[#64748b]">Fleet Utilization</span>
+                <span className="font-semibold text-[#1e293b]">78%</span>
+              </div>
+              <div className="w-full bg-[#f3f4f6] rounded-full h-2.5">
+                <div className="bg-[#2563eb] h-2.5 rounded-full" style={{ width: '78%' }}></div>
               </div>
             </div>
-            <p
-              className="text-sm mb-1"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {stat.title}
-            </p>
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="text-2xl font-semibold"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                —
-              </span>
-              <Loader2
-                size={16}
-                className="animate-spin"
-                style={{ color: 'var(--text-muted)' }}
-              />
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[#64748b]">Customer Satisfaction</span>
+                <span className="font-semibold text-[#1e293b]">4.8/5</span>
+              </div>
+              <div className="w-full bg-[#f3f4f6] rounded-full h-2.5">
+                <div className="bg-[#8b5cf6] h-2.5 rounded-full" style={{ width: '96%' }}></div>
+              </div>
             </div>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {stat.description}
-            </p>
           </div>
-        ))}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <h2
-          className="text-lg font-semibold mb-4"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Quick Actions
-        </h2>
-        <div className="flex flex-wrap gap-4">
-          {quickActions.map((action, index) => (
-            <Link
-              key={index}
-              href={action.href}
-              className="flex items-center gap-2 px-6 py-3 rounded-[var(--border-radius)] font-medium text-sm transition-all duration-200"
-              style={{
-                backgroundColor: action.primary
-                  ? 'var(--primary-blue)'
-                  : 'var(--card-bg)',
-                color: action.primary ? 'white' : 'var(--text-primary)',
-                border: action.primary
-                  ? 'none'
-                  : '1px solid var(--border-color)',
-              }}
-              onMouseEnter={(e) => {
-                if (action.primary) {
-                  e.currentTarget.style.backgroundColor =
-                    'var(--primary-blue-hover)';
-                } else {
-                  e.currentTarget.style.backgroundColor =
-                    'var(--card-bg-hover)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (action.primary) {
-                  e.currentTarget.style.backgroundColor = 'var(--primary-blue)';
-                } else {
-                  e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                }
-              }}
-            >
-              {action.icon}
-              {action.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Integration Notice */}
-      <div
-        className="p-6 rounded-[var(--border-radius)]"
-        style={{
-          backgroundColor: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-        }}
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className="p-3 rounded-[var(--border-radius-sm)]"
-            style={{
-              backgroundColor: 'var(--status-in-transit-bg)',
-              color: 'var(--status-in-transit)',
-            }}
-          >
-            <Package size={24} />
-          </div>
-          <div>
-            <h3
-              className="font-semibold mb-1"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Backend Integration Pending
-            </h3>
-            <p
-              className="text-sm mb-3"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Stats and data will populate once connected to the FastAPI backend.
-            </p>
-            <code
-              className="text-xs px-3 py-2 rounded-[var(--border-radius-sm)] block"
-              style={{
-                backgroundColor: 'var(--bg-dark)',
-                color: 'var(--text-muted)',
-              }}
-            >
-              cd backend && uvicorn app.main:app --reload
-            </code>
+          <div className="mt-6 pt-4 border-t border-[#e9ecef]">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#64748b]">Today's Revenue</span>
+              <span className="text-xl font-bold text-[#1e293b]">LKR 124,500</span>
+            </div>
+            <div className="flex items-center text-[#10b981] text-sm mt-1">
+              <TrendingUp className="w-4 h-4 mr-1" />
+              <span>+12.5% from yesterday</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
