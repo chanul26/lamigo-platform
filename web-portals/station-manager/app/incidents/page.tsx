@@ -104,7 +104,7 @@ export default function IncidentsPage() {
           </thead>
           <tbody className="bg-white divide-y divide-[#e9ecef]">
             {filteredIncidents.map((incident) => {
-              const CategoryIcon = categoryConfig[incident.id].icon
+              const CategoryIcon = categoryConfig[incident.category].icon
               
               return (
                 <tr key={incident.id} className="hover:bg-[#f3f4f6]/50">
