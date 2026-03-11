@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 interface Trip {
   id: string
-  status: 'Progress' | 'Draft' | 'Completed'
+  status: 'In Progress' | 'Draft' | 'Completed'
   driver: string 
   driverInitials: string
   packageCount: number
