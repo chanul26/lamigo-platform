@@ -55,7 +55,15 @@ export default function DashboardPage() {
                     <Clock className="w-4 h-4 mr-1" />
                     {i * 15} min ago
                   </span>
-				 
+				 				  
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                    i === 1 ? 'bg-[#2563eb]/10 text-[#2563eb]' : 
+                    i === 2 ? 'bg-[#10b981]/10 text-[#10b981]' : 
+                    'bg-[#f59e0b]/10 text-[#f59e0b]'
+                  }`}>
+                    {i === 1 ? 'In Progress' : i === 2 ? 'Completed' : 'Delayed'}
+                  </span>
+				  
                 </div>
               </div>
             ))}
