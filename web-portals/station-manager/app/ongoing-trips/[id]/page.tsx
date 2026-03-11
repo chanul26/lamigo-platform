@@ -9,7 +9,7 @@ import IncidentModal from '../../components/IncidentModal'
 interface Stop {
   id: number
   address: string
-  status: 'delivered' | 'en-route' 
+  status: 'delivered' | 'en-route' | 'pending'
 }
 
 const mockStops: Stop[] = [
