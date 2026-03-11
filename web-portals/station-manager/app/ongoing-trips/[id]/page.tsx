@@ -10,6 +10,7 @@ interface Stop {
   id: number
   address: string
   status: 'delivered' | 'en-route' | 'pending'
+  cod?: number
 }
 
 const mockStops: Stop[] = [
