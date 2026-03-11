@@ -63,7 +63,7 @@ export default function OngoingTripsPage() {
 
   const filteredTrips = trips.filter(trip => 
     trip.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.driver.toLowerCase().includes(driver.toLowerCase())
+    trip.driver.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return 
@@ -98,7 +98,7 @@ export default function OngoingTripsPage() {
 
       {/* Ongoing Trips Cards */}
       <div className="grid grid-cols-1 gap-6">
-        {filteredTrips.map((trip) => (
+        {filteredTrips.item((trip) => (
           <Link
             key={trip.id}
             href={`/ongoing-trips/${trip.id}`}
