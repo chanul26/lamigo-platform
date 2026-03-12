@@ -2,15 +2,13 @@ from fastapi import APIRouter
 
 # Import the individual feature routers
 from app.api.api_v1.endpoints import auth
+from app.api.api_v1.endpoints import organization # <-- ADD THIS
 
 # Create the master router
 api_router = APIRouter()
 
-# Plug in the Auth feature
-# Notice we put the specific "/auth" prefix and tags here!
+# Plug in the features
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
-# Later, when you build other features, you'll just add them like this:
-# from app.api.endpoints import trips, packages, drivers
-# api_router.include_router(trips.router, prefix="/trips", tags=["Trips"])
-# api_router.include_router(packages.router, prefix="/packages", tags=["Packages"])
+# Plug in the Organization feature (Outputs to /api/v1/organizations)
+api_router.include_router(organization.router, prefix="/organizations", tags=["Organizations"]) # <-- ADD THIS
