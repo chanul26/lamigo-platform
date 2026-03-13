@@ -8,8 +8,8 @@ from app.api.deps import get_db, RoleChecker
 from app.models.enums import UserRole
 
 # --- Schemas & Services ---
-from app.schemas.organization import OrganizationCreate, OrganizationUpdate, OrganizationResponse
-from app.services import organization 
+from app.schemas.organization_schemas import OrganizationCreate, OrganizationUpdate, OrganizationResponse
+from app.services import organization_service
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ async def create_organization(
     Create a new organization. 
     Requires SUPER_ADMIN privileges.
     """
-    return await organization.create_organization(db, org_in)
+    return await organization_service.create_organization(db, org_in)
 
 
 @router.get("/", response_model=List[OrganizationResponse])
@@ -36,7 +36,7 @@ async def get_organizations(
     Retrieve a list of all organizations.
     Requires SUPER_ADMIN privileges.
     """
-    return await organization.get_all_organizations(db)
+    return await organization_service.get_all_organizations(db)
 
 
 @router.get("/{org_id}", response_model=OrganizationResponse)
@@ -49,7 +49,7 @@ async def get_organization(
     Retrieve details of a specific organization by its UUID.
     Requires SUPER_ADMIN privileges.
     """
-    return await organization.get_organization(db, org_id)
+    return await organization_service.get_organization(db, org_id)
 
 
 @router.patch("/{org_id}", response_model=OrganizationResponse)
@@ -64,7 +64,7 @@ async def update_organization(
     Requires SUPER_ADMIN privileges.
     """
     # We use PATCH here because OrganizationUpdate allows partial updates (exclude_unset=True)
-    return await organization.update_organization(db, org_id, org_in)
+    return await organization_service.update_organization(db, org_id, org_in)
 
 
 @router.delete("/{org_id}", status_code=status.HTTP_200_OK)
@@ -77,4 +77,4 @@ async def deactivate_organization(
     Deactivate an organization (Soft Delete).
     Requires SUPER_ADMIN privileges.
     """
-    return await organization.deactivate_organization(db, org_id)
+    return await organization_service.deactivate_organization(db, org_id)
