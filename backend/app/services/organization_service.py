@@ -1,10 +1,10 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 from uuid import UUID
 
 from app.models.sql_models import Organization
-from app.schemas.organization import OrganizationCreate, OrganizationUpdate
+from app.schemas.organization_schemas import OrganizationCreate, OrganizationUpdate
 
 async def create_organization(db: AsyncSession, org_in: OrganizationCreate) -> Organization:
     """Creates a new organization in the database."""
