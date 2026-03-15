@@ -33,6 +33,7 @@ export default function PackagesPage() {
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Phone Number</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Address</th>
             </tr>
+            
           </thead>
           <tbody className="divide-y divide-gray-200">
             {/* Package Row 1 */}
@@ -48,6 +49,7 @@ export default function PackagesPage() {
                   To be Delivered
                 </span>
               </td>
+              
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
                   <MapPin size={14} className="text-orange-500" />
