@@ -91,7 +91,7 @@ export default function PackagesPage() {
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
-                No 12, Galle Rd, Mount Lavinia
+                No 12, Galle Road, Mount Lavinia
               </td>
             </tr>
 
