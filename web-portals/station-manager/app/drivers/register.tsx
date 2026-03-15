@@ -8,6 +8,7 @@ export default function PackagesPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
+      
       {/* Header */}
       <div className="mb-8 flex justify-between items-center">
         <div>
