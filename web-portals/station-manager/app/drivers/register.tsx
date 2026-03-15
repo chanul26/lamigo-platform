@@ -54,6 +54,7 @@ export default function PackagesPage() {
               
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
+                  
                   <MapPin size={14} className="text-orange-500" />
                   <span className="text-sm">-</span>
                 </div>
