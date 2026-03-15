@@ -24,7 +24,7 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 15000); // Polling every 15s per requirements
+    const interval = setInterval(fetchData, 15000); // Every 15s per requirement
     return () => clearInterval(interval);
   }, [tripId]);
 
@@ -34,8 +34,7 @@ export default function TripDetailPage() {
     <div className="p-8">
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold">Trip Details: #{tripId.slice(0,8)}</h1>
-          <p className="text-gray-500">Driver: {trip?.driver_name} | Status: {trip?.status}</p>
+          <h1 className="text-2xl font-bold">Trip Details: #{typeof tripId === 'string' ? tripId.slice(0,8) : 'Loading...'}</h1>
         </div>
         <a href="tel:0112345678" className="flex items-center gap-2 px-4 py-2 border rounded hover:bg-gray-50">
           <Phone size={18} /> Call Driver
