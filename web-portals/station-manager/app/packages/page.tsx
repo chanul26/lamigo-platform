@@ -121,7 +121,7 @@ export default function PackagesPage() {
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
-                No 78, Kandy Rd, Kaduwela
+                No 78, Kandy Road, Kaduwela
               </td>
             </tr>
 
