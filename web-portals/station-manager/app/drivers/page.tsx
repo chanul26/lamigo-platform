@@ -100,6 +100,7 @@ export default function DriversPage() {
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Wallet Balance</th>
             </tr>
           </thead>
+          
           <tbody className="divide-y divide-gray-200">
             {drivers.map((driver, index) => (
               <tr key={index} className="hover:bg-gray-50">
