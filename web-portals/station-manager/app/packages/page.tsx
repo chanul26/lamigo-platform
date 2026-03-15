@@ -74,6 +74,7 @@ export default function PackagesPage() {
                   <span className="text-sm font-medium text-gray-900">#PKG-993</span>
                 </div>
               </td>
+              
               <td className="px-6 py-4">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   Assigned
