@@ -82,6 +82,7 @@ export default function PackagesPage() {
                   
                 </span>
               </td>
+              
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
                   <MapPin size={14} className="text-green-500" />
