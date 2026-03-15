@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from "react";
 import {
   Package,
   Wallet,
@@ -67,6 +68,42 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
+
+  const [stats, setStats] = useState({
+    pendingPackages: 0,
+    inTransit: 0,
+    settlements: 0,
+    activeTrips: 0
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const [pkgRes, tripRes] = await Promise.all([
+          fetch('http://localhost:8000/api/v1/packages'),
+          fetch('http://localhost:8000/api/v1/trips')
+        ]);
+
+        const pkgs = await pkgRes.json();
+        const trips = await tripRes.json();
+
+        setStats({
+          pendingPackages: pkgs.filter((p: any) => p.status === 'pending').length,
+          inTransit: pkgs.filter((p: any) => p.status === 'in_transit').length,
+          settlements: 0, 
+          activeTrips: trips.filter((t: any) => t.status === 'ongoing').length,
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error("Connection to Backend failed:", error);
+        setLoading(false);
+      }
+    }
+    fetchDashboardData();
+  }, []);
+
   return (
     <div className="p-8 animate-fade-in">
       {/* Header */}
@@ -113,15 +150,26 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-2xl font-semibold"
-                style={{ color: 'var(--text-muted)' }}
+                style={{ color: 'var(--text-primary)' }}
               >
-                —
+                {loading
+                  ? '—'
+                  : index === 0
+                  ? stats.pendingPackages
+                  : index === 1
+                  ? stats.inTransit
+                  : index === 2
+                  ? stats.settlements
+                  : stats.activeTrips}
               </span>
-              <Loader2
-                size={16}
-                className="animate-spin"
-                style={{ color: 'var(--text-muted)' }}
-              />
+
+              {loading && (
+                <Loader2
+                  size={16}
+                  className="animate-spin"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+              )}
             </div>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
               {stat.description}
@@ -174,50 +222,6 @@ export default function DashboardPage() {
               {action.label}
             </Link>
           ))}
-        </div>
-      </div>
-
-      {/* Integration Notice */}
-      <div
-        className="p-6 rounded-[var(--border-radius)]"
-        style={{
-          backgroundColor: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-        }}
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className="p-3 rounded-[var(--border-radius-sm)]"
-            style={{
-              backgroundColor: 'var(--status-in-transit-bg)',
-              color: 'var(--status-in-transit)',
-            }}
-          >
-            <Package size={24} />
-          </div>
-          <div>
-            <h3
-              className="font-semibold mb-1"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Backend Integration Pending
-            </h3>
-            <p
-              className="text-sm mb-3"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Stats and data will populate once connected to the FastAPI backend.
-            </p>
-            <code
-              className="text-xs px-3 py-2 rounded-[var(--border-radius-sm)] block"
-              style={{
-                backgroundColor: 'var(--bg-dark)',
-                color: 'var(--text-muted)',
-              }}
-            >
-              cd backend && uvicorn app.main:app --reload
-            </code>
-          </div>
         </div>
       </div>
     </div>
