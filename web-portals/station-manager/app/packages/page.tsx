@@ -59,6 +59,7 @@ export default function PackagesPage() {
                   <Phone size={14} />
                   <span className="text-sm">077-123-45667</span>
                 </div>
+                
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
                 No 45, Temple Rd, Colombo
