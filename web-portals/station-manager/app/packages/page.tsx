@@ -57,7 +57,7 @@ export default function PackagesPage() {
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
                   <Phone size={14} />
-                  <span className="text-sm">077-123-4567</span>
+                  <span className="text-sm">077-123-45667</span>
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
