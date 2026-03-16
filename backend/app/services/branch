@@ -1,0 +1,83 @@
+from uuid import UUID
+from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from app.models.sql_models import Branch, Organization
+from app.schemas.branch_schemas import BranchCreate, BranchUpdate
+
+async def create_branch(db: AsyncSession, branch_in: BranchCreate) -> Branch:
+    """Creates a new branch under an existing organization."""
+    
+    # 1. Verify the parent Organization actually exists
+    org_result = await db.execute(select(Organization).where(Organization.org_id == branch_in.org_id))
+    parent_org = org_result.scalars().first()
+    
+    if not parent_org:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parent Organization not found. Cannot create branch."
+        )
+        
+        
+    # 3. Create the Branch
+    new_branch = Branch(**branch_in.model_dump())
+    
+    db.add(new_branch)
+    await db.commit()
+    await db.refresh(new_branch)
+    
+    return new_branch
+
+
+async def get_all_branches(db: AsyncSession, org_id: UUID = None) -> list[Branch]:
+    """Fetches all branches, optionally filtered by a specific organization."""
+    query = select(Branch)
+    
+    # Optional filter: extremely useful for the Super Admin dashboard
+    if org_id:
+        query = query.where(Branch.org_id == org_id)
+        
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+async def get_branch(db: AsyncSession, branch_id: UUID) -> Branch:
+    """Fetches a specific branch by its UUID."""
+    result = await db.execute(select(Branch).where(Branch.branch_id == branch_id))
+    branch = result.scalars().first()
+    
+    if not branch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Branch not found"
+        )
+    return branch
+
+
+async def update_branch(db: AsyncSession, branch_id: UUID, branch_in: BranchUpdate) -> Branch:
+    """Updates specific fields of a branch."""
+    branch = await get_branch(db, branch_id)
+    
+    # Only update the fields the user actually provided in the request
+    update_data = branch_in.model_dump(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        setattr(branch, field, value)
+        
+    await db.commit()
+    await db.refresh(branch)
+    
+    return branch
+
+
+async def delete_branch(db: AsyncSession, branch_id: UUID):
+    """Hard deletes a branch from the database."""
+    # Note: The Branch model in your sql_models.py doesn't have an is_active flag,
+    # so we perform an actual deletion here instead of a soft-delete.
+    branch = await get_branch(db, branch_id)
+    
+    await db.delete(branch)
+    await db.commit()
+    
+    return {"message": f"Branch '{branch.name}' successfully deleted."}
