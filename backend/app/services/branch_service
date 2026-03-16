@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 
 from app.models.sql_models import Branch, Organization
 from app.schemas.branch_schemas import BranchCreate, BranchUpdate
