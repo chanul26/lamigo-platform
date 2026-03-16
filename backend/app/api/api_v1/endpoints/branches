@@ -67,3 +67,16 @@ async def update_branch(
     return await branch_service.update_branch(db, branch_id, branch_in)
 
 
+@router.delete("/{branch_id}", status_code=status.HTTP_200_OK)
+async def delete_branch(
+    branch_id: UUID,
+    admin_user: dict = Depends(RoleChecker([UserRole.SUPER_ADMIN])),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Permanently delete a branch.
+    Requires SUPER_ADMIN privileges.
+    """
+    return await branch_service.delete_branch(db, branch_id)
+
+
