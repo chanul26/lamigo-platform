@@ -1,9 +1,9 @@
 'use client';
 
 import { User, Wallet, Zap } from 'lucide-react';
-import { Interface } from 'readline';
 import Avatar from '@/components/Avatar';
 import { useState } from 'react';
+import SettlePaymentModal from '@/components/SettlePaymentModel';
 
 
 {/* interface to define to get the data of the driver
@@ -20,7 +20,7 @@ interface driverSettlement {
   functionality before integrating with
   the backend API(Place holder for API endpoint) 
   */ }
-const MOCK_SETTLEMENTS: driverSettlement[] = [
+const MOCK_SETTLEMENT: driverSettlement[] = [
   { id: 1, driver_id: 1, driver_name: 'Saman Kumara',        total_pending: 18500 },
   { id: 2, driver_id: 2, driver_name: 'Nimal Perera',        total_pending: 4200  },
   { id: 3, driver_id: 3, driver_name: 'Kasun Jayasuriya',    total_pending: 12150 },
@@ -34,7 +34,18 @@ const MOCK_SETTLEMENTS: driverSettlement[] = [
 
 export default function SettlementsPage() {
 
-  
+  const [settlements, setSettlements] = useState<driverSettlement[]>(MOCK_SETTLEMENT);
+  const [selected, setSelected] = useState<driverSettlement | null>(null);
+
+  // Called after confirmed payment — resets driver's balance to 0
+  function handlePaymentSuccess(settlementId: number) {
+    setSettlements((prev) =>
+      prev.map((s) => (s.id === settlementId ? { ...s, total_pending: 0 } : s))
+    );
+    setSelected(null);
+  }
+
+
   return (
     <div className="p-8">{/* divison of the padge body content */}
       
@@ -74,13 +85,12 @@ export default function SettlementsPage() {
           </thead>
 
           <tbody>
-            {MOCK_SETTLEMENTS.map((s, i) => {
+            {settlements.map((s, i) => {
 
               {/* check whther the curent settlement is the last */}
-              const isLast = i == MOCK_SETTLEMENTS.length - 1;
+              const isLast = i == settlements.length - 1;
 
-              {/* Tracks which driver's Pay button was clicked — opens the payment modal */}
-              const [selected, setSelected] = useState<driverSettlement | null>(null);
+              
 
               {/* chekc whther the current settelment total pending is above 0 */}
               const canPay = s.total_pending > 0;
@@ -145,6 +155,14 @@ export default function SettlementsPage() {
         </a>
       </div>
 
+      {/* Settle Payment Modal */}
+      {selected && (
+        <SettlePaymentModal
+          settlement={selected}
+          onSuccess={handlePaymentSuccess}
+          onClose={() => setSelected(null)}
+        />
+      )}
 
     </div>
   );
