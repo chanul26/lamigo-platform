@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import verify_firebase_token
 from app.services import auth_service
-from app.schemas.user import CurrentUserResponse, LoginRequest
+from app.schemas.user_schemas import CurrentUserResponse, LoginRequest
 
 # --- ADDED: Import our new centralized dependency chain ---
 from app.api.deps import get_current_user
