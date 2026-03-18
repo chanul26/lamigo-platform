@@ -10,14 +10,14 @@ class DeliveryPreferenceBase(BaseModel):
     status: PreferenceStatus
 
 class DeliveryPreferenceCreate(DeliveryPreferenceBase):
-    recipient_id: UUID
+    package_id: UUID  # <-- CHANGED
 
 class DeliveryPreferenceUpdate(BaseModel):
     status: PreferenceStatus
 
 class DeliveryPreferenceResponse(DeliveryPreferenceBase):
     preference_id: UUID
-    recipient_id: UUID
+    package_id: UUID  # <-- CHANGED
     created_at: datetime
     updated_at: datetime
 

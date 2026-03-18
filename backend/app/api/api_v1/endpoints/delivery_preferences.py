@@ -19,17 +19,17 @@ async def create_delivery_preference(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_manager_or_admin)
 ):
-    """Log a calendar constraint (Available/Unavailable) for a recipient."""
+    """Log a calendar constraint for a specific package."""
     return await delivery_preference_service.create_preference(db, pref_in)
 
 @router.get("/", response_model=List[DeliveryPreferenceResponse])
-async def read_recipient_preferences(
-    recipient_id: UUID = Query(..., description="The ID of the recipient to fetch calendar data for"),
+async def read_package_preferences(
+    package_id: UUID = Query(..., description="The ID of the package to fetch calendar data for"),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_manager_or_admin)
 ):
-    """Get all set calendar preferences for a specific recipient."""
-    return await delivery_preference_service.get_preferences_by_recipient(db, recipient_id)
+    """Get all set calendar preferences for a specific package."""
+    return await delivery_preference_service.get_preferences_by_package(db, package_id)
 
 @router.put("/{preference_id}", response_model=DeliveryPreferenceResponse)
 async def update_delivery_preference(
@@ -38,5 +38,5 @@ async def update_delivery_preference(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_manager_or_admin)
 ):
-    """Update a previously set preference (e.g. changing from AVAILABLE to UNAVAILABLE)."""
+    """Update a previously set preference."""
     return await delivery_preference_service.update_preference(db, preference_id, pref_in)
