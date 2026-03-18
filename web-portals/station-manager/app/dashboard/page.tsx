@@ -1,224 +1,158 @@
 'use client';
 
-import {
-  Package,
-  Wallet,
-  Truck,
-  MapPin,
-  Plus,
-  ArrowRight,
-  Loader2,
+import { 
+  Package, 
+  Wallet, 
+  Truck, 
+  Plus, 
+  ArrowRight, 
+  Loader2 
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-interface StatCard {
-  title: string;
-  icon: React.ReactNode;
-  color: string;
-  description: string;
-}
-
-const statCards: StatCard[] = [
-  {
-    title: 'Pending Deliveries',
-    icon: <Package size={24} />,
-    color: 'var(--status-pending)',
-    description: 'Packages awaiting dispatch',
-  },
-  {
-    title: 'In Transit',
-    icon: <Truck size={24} />,
-    color: 'var(--status-in-transit)',
-    description: 'Active deliveries',
-  },
-  {
-    title: 'Pending Settlements',
-    icon: <Wallet size={24} />,
-    color: 'var(--status-failed)',
-    description: 'Driver payments due',
-  },
-  {
-    title: 'Active Trips',
-    icon: <MapPin size={24} />,
-    color: 'var(--status-delivered)',
-    description: 'Ongoing routes',
-  },
-];
-
-const quickActions = [
-  {
-    label: 'Create New Trip',
-    icon: <Plus size={20} />,
-    href: '/trips',
-    primary: true,
-  },
-  {
-    label: 'Add New Package',
-    icon: <Plus size={20} />,
-    href: '/packages',
-    primary: false,
-  },
-  {
-    label: 'Process Settlements',
-    icon: <ArrowRight size={20} />,
-    href: '/settlements',
-    primary: false,
-  },
-];
-
 export default function DashboardPage() {
+  // Setup state to hold real data from the API
+  const [stats, setStats] = useState({
+    pendingPackages: 0,
+    activeTrips: 0,
+    totalSettlements: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from local FastAPI backend
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [pkgRes, tripRes, setRes] = await Promise.all([
+          fetch("http://localhost:8000/api/v1/packages", { headers }),
+          fetch("http://localhost:8000/api/v1/trips?status=active", { headers }),
+          fetch("http://localhost:8000/api/v1/settlements", { headers })
+        ]);
+
+        const packages = await pkgRes.json();
+        const trips = await tripRes.json();
+        const settlements = await setRes.json();
+
+        setStats({
+          //Filter for 'pending' status specifically
+          pendingPackages: Array.isArray(packages) 
+            ? packages.filter((p: any) => p.status === 'pending').length 
+            : 0,
+          activeTrips: Array.isArray(trips) ? trips.length : 0,
+          // Sum amount_due for settlements
+          totalSettlements: Array.isArray(settlements)
+            ? settlements.reduce((acc: number, curr: any) => acc + (curr.amount_due || 0), 0)
+            : 0
+        });
+      } catch (error) {
+        console.error("Dashboard fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, []);
+
+  // The UI mapping for the cards
+  const statCards = [
+    {
+      title: 'Pending Deliveries',
+      value: stats.pendingPackages,
+      icon: <Package size={24} />,
+      color: 'var(--primary-blue)',
+      description: 'Packages awaiting dispatch',
+    },
+    {
+      title: 'Pending Settlements',
+      value: `LKR ${stats.totalSettlements.toLocaleString()}`,
+      icon: <Wallet size={24} />,
+      color: '#f59e0b', 
+      description: 'Driver payments due',
+    },
+    {
+      title: 'Active Trips',
+      value: stats.activeTrips,
+      icon: <Truck size={24} />,
+      color: '#10b981', 
+      description: 'Ongoing routes',
+    },
+  ];
+
   return (
     <div className="p-8 animate-fade-in">
       {/* Header */}
       <div className="mb-8">
-        <h1
-          className="text-2xl font-semibold mb-2"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Welcome to LamiGo Logistics
+        <h1 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+          Dashboard
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Manage your deliveries, drivers, and settlements from one place.
-        </p>
+        <p style={{ color: 'var(--text-secondary)' }}>Welcome to LamiGo Logistics</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {statCards.map((stat, index) => (
           <div
             key={index}
-            className="p-6 rounded-[var(--border-radius)] transition-all duration-200 hover:scale-[1.02]"
-            style={{
-              backgroundColor: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
+            className="p-6 rounded-[var(--border-radius)]"
+            style={{ 
+              backgroundColor: 'var(--card-bg)', 
+              border: '1px solid var(--border-color)' 
             }}
           >
-            <div className="flex items-start justify-between mb-4">
-              <div
-                className="p-3 rounded-[var(--border-radius-sm)]"
-                style={{
-                  backgroundColor: `${stat.color}20`,
-                  color: stat.color,
-                }}
-              >
+            <div className="flex items-center justify-between mb-4">
+               <div 
+                 className="p-3 rounded-lg" 
+                 style={{ backgroundColor: `${stat.color}15`, color: stat.color }}
+               >
                 {stat.icon}
               </div>
             </div>
-            <p
-              className="text-sm mb-1"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {stat.title}
-            </p>
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="text-2xl font-semibold"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                —
-              </span>
-              <Loader2
-                size={16}
-                className="animate-spin"
-                style={{ color: 'var(--text-muted)' }}
-              />
+            <p className="text-sm text-[var(--text-secondary)] font-medium">{stat.title}</p>
+            <div className="text-3xl font-bold my-1 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              {loading ? (
+                <Loader2 className="animate-spin text-[var(--text-muted)]" size={24} />
+              ) : (
+                stat.value
+              )}
             </div>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {stat.description}
-            </p>
+            <p className="text-xs text-[var(--text-muted)]">{stat.description}</p>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-8">
-        <h2
-          className="text-lg font-semibold mb-4"
-          style={{ color: 'var(--text-primary)' }}
+      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+        Quick Actions
+      </h2>
+      <div className="flex flex-wrap gap-4">
+        <Link 
+          href="/trips/create" 
+          className="flex items-center gap-2 px-6 py-3 bg-[var(--primary-blue)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
         >
-          Quick Actions
-        </h2>
-        <div className="flex flex-wrap gap-4">
-          {quickActions.map((action, index) => (
-            <Link
-              key={index}
-              href={action.href}
-              className="flex items-center gap-2 px-6 py-3 rounded-[var(--border-radius)] font-medium text-sm transition-all duration-200"
-              style={{
-                backgroundColor: action.primary
-                  ? 'var(--primary-blue)'
-                  : 'var(--card-bg)',
-                color: action.primary ? 'white' : 'var(--text-primary)',
-                border: action.primary
-                  ? 'none'
-                  : '1px solid var(--border-color)',
-              }}
-              onMouseEnter={(e) => {
-                if (action.primary) {
-                  e.currentTarget.style.backgroundColor =
-                    'var(--primary-blue-hover)';
-                } else {
-                  e.currentTarget.style.backgroundColor =
-                    'var(--card-bg-hover)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (action.primary) {
-                  e.currentTarget.style.backgroundColor = 'var(--primary-blue)';
-                } else {
-                  e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                }
-              }}
-            >
-              {action.icon}
-              {action.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+          <Plus size={20} />
+          Create New Trip
+        </Link>
+        
+        <Link 
+          href="/packages" 
+          className="flex items-center gap-2 px-6 py-3 border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-gray-50 transition-colors"
+        >
+          <Plus size={20} />
+          Add New Package
+        </Link>
 
-      {/* Integration Notice */}
-      <div
-        className="p-6 rounded-[var(--border-radius)]"
-        style={{
-          backgroundColor: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-        }}
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className="p-3 rounded-[var(--border-radius-sm)]"
-            style={{
-              backgroundColor: 'var(--status-in-transit-bg)',
-              color: 'var(--status-in-transit)',
-            }}
-          >
-            <Package size={24} />
-          </div>
-          <div>
-            <h3
-              className="font-semibold mb-1"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Backend Integration Pending
-            </h3>
-            <p
-              className="text-sm mb-3"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Stats and data will populate once connected to the FastAPI backend.
-            </p>
-            <code
-              className="text-xs px-3 py-2 rounded-[var(--border-radius-sm)] block"
-              style={{
-                backgroundColor: 'var(--bg-dark)',
-                color: 'var(--text-muted)',
-              }}
-            >
-              cd backend && uvicorn app.main:app --reload
-            </code>
-          </div>
-        </div>
+        <Link 
+          href="/settlements" 
+          className="flex items-center gap-2 px-6 py-3 border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-gray-50 transition-colors"
+        >
+          <ArrowRight size={20} />
+          Process Settlements
+        </Link>
       </div>
     </div>
   );
