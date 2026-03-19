@@ -18,11 +18,7 @@ class RecipientBase(BaseModel):
     gps_lat: float = Field(..., description="Latitude coordinate")
     gps_lng: float = Field(..., description="Longitude coordinate")
 
-# 2. Create Schema: Used for POST requests
-class RecipientCreate(RecipientBase):
-    pass
-
-# 3. Update Schema: Used for PATCH/PUT requests
+# 2. Update Schema: Used for PATCH/PUT requests
 # All fields are optional to allow partial updates (e.g., just updating the phone number)
 class RecipientUpdate(BaseModel):
     name: Optional[str] = None
@@ -34,7 +30,7 @@ class RecipientUpdate(BaseModel):
     gps_lng: Optional[float] = None
     is_location_verified: Optional[bool] = None
 
-# 4. Response Schema: What the API returns to the frontend
+# 3. Response Schema: What the API returns to the frontend
 class RecipientResponse(RecipientBase):
     recipient_id: UUID
     is_location_verified: bool

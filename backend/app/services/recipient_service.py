@@ -4,20 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.sql_models import Recipient
-from app.schemas.recipient_schemas import RecipientCreate, RecipientUpdate
-
-async def create_recipient(db: AsyncSession, recipient_in: RecipientCreate) -> Recipient:
-    """Creates a new recipient in the database."""
-    
-    # Convert Pydantic schema to SQLAlchemy model
-    new_recipient = Recipient(**recipient_in.model_dump())
-    
-    db.add(new_recipient)
-    await db.commit()
-    await db.refresh(new_recipient)
-    
-    return new_recipient
-
+from app.schemas.recipient_schemas import RecipientUpdate
 
 async def get_all_recipients(db: AsyncSession) -> list[Recipient]:
     """Fetches all recipients using modern SQLAlchemy 2.0 syntax."""
