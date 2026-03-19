@@ -10,6 +10,7 @@ interface Incident {
   id: number;
   driver_id: number;
   driver_name: string;
+  phone: string;
   type: "accident" | "breakdown" | "other";
   description: string;
   location: string;
@@ -20,11 +21,11 @@ interface Incident {
 
 // TODO: Replace with useQuery → GET /api/v1/incidents?status=active (poll every 30s)
 const MOCK_INCIDENTS: Incident[] = [
-  { id: 1, driver_id: 1, driver_name: 'Saman Kumara', type: 'accident', description: 'Vehicle collision on highway', location: 'Colombo - Kandy Road, Km 42', reported_at: '2026-03-17 09:23', status: 'active' },
-  { id: 2, driver_id: 2, driver_name: 'Nimal Perera', type: 'breakdown', description: 'Engine failure, cannot move', location: 'Galle Road, Dehiwala', reported_at: '2026-03-17 10:05', status: 'active' },
-  { id: 3, driver_id: 3, driver_name: 'Kasun Jayasuriya', type: 'other', description: 'Package damaged by customer', location: 'Nugegoda Junction', reported_at: '2026-03-17 11:30', status: 'rescue_assigned' },
-  { id: 4, driver_id: 4, driver_name: 'Amal Silva', type: 'accident', description: 'Minor collision at junction', location: 'Pettah, Colombo 11', reported_at: '2026-03-17 12:15', status: 'active' },
-  { id: 5, driver_id: 5, driver_name: 'Ruwan Hettiarachchi', type: 'breakdown', description: 'Flat tyre, stuck on expressway', location: 'Southern Expressway, Km 18', reported_at: '2026-03-17 13:00', status: 'active' },
+  { id: 1, driver_id: 1, driver_name: 'Saman Kumara',        phone: '+94771234561', type: 'accident',  description: 'Vehicle collision on highway',   location: 'Colombo - Kandy Road, Km 42', reported_at: '2026-03-17 09:23', status: 'active' },
+  { id: 2, driver_id: 2, driver_name: 'Nimal Perera',        phone: '+94771234562', type: 'breakdown', description: 'Engine failure, cannot move',     location: 'Galle Road, Dehiwala',        reported_at: '2026-03-17 10:05', status: 'active' },
+  { id: 3, driver_id: 3, driver_name: 'Kasun Jayasuriya',    phone: '+94771234563', type: 'other',     description: 'Package damaged by customer',    location: 'Nugegoda Junction',           reported_at: '2026-03-17 11:30', status: 'rescue_assigned' },
+  { id: 4, driver_id: 4, driver_name: 'Amal Silva',          phone: '+94771234564', type: 'accident',  description: 'Minor collision at junction',    location: 'Pettah, Colombo 11',          reported_at: '2026-03-17 12:15', status: 'active' },
+  { id: 5, driver_id: 5, driver_name: 'Ruwan Hettiarachchi', phone: '+94771234565', type: 'breakdown', description: 'Flat tyre, stuck on expressway',  location: 'Southern Expressway, Km 18',  reported_at: '2026-03-17 13:00', status: 'active' },
 ];
 
 
