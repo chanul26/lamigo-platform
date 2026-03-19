@@ -2,7 +2,8 @@
 
 
 import Avatar from "@/components/Avatar";
-
+import { useState } from 'react';
+import IncidentManagementModal from '@/components/IncidentsManagementModel';
 
 interface Incident {
 
@@ -28,6 +29,9 @@ const MOCK_INCIDENTS: Incident[] = [
 
 
 export default function IncidentsPage() {
+
+
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
   const typeConfig = {
     accident: { label: 'Accident', border: 'border-t-red-500', badge: 'bg-red-500/20 text-red-400' },
@@ -70,13 +74,26 @@ export default function IncidentsPage() {
               <p className="text-sm text-[#A1A1A1] line-clamp-2">{incident.description}</p>
 
               {/* View Details button */}
-              <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors mt-auto">
+              <button 
+                onClick={() => setSelectedIncident(incident)}
+                className="w-full py-2 bg-blue-600 
+                hover:bg-blue-700 text-white text-sm font-semibold 
+                rounded-lg transition-colors mt-auto"
+              >
                 View Details
               </button>
             </div>
           );
-        })};
+        })}
+        
       </div>
+
+      {selectedIncident && (
+          <IncidentManagementModal
+            incidents={selectedIncident}
+            onClose={() => setSelectedIncident(null)}
+          />
+      )}
 
       {/* View Past Resolved Incidents button will go here */}
       <div className="mt-6">
