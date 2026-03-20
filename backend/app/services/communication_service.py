@@ -33,3 +33,29 @@ def log_sms(package_id: str, recipient_phone: str, message_body: str, category: 
     except Exception as e:
         # We only log the error so a failed text log doesn't crash the main delivery flow
         logger.error(f"Failed to log SMS to DynamoDB: {e}")
+
+def log_call(user_id: str, recipient_phone: str, task_id: str, role: str, duration_seconds: int = 0):
+    """
+    Asynchronously logs a phone call to DynamoDB with a 180-day auto-delete (TTL).
+    """
+    try:
+        table = dynamodb_resource.Table("LamiGo_CallLogs")
+        
+        # Calculate the exact second this record should self-destruct (180 days from now)
+        expiration_time = int((datetime.now(timezone.utc) + timedelta(days=180)).timestamp())
+        
+        item = {
+            "call_id": str(uuid.uuid4()),                         # Main Partition Key
+            "user_id": str(user_id),                              # GSI 1 Partition Key
+            "task_id": str(task_id),                              # GSI 2 Partition Key
+            "recipient_phone": recipient_phone,                   # GSI 3 Partition Key
+            "role": role,                                         # e.g., "DRIVER" or "STATION_MANAGER"
+            "duration_seconds": duration_seconds,
+            "created_at": datetime.now(timezone.utc).isoformat(), # Sort Key for all 3 GSIs
+            "ttl": expiration_time                                # The AWS auto-delete trigger
+        }
+        
+        table.put_item(Item=item)
+        
+    except Exception as e:
+        logger.error(f"Failed to log Call to DynamoDB: {e}")
