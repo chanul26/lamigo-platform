@@ -40,7 +40,8 @@ class UserCreate(UserBase):
     """
     # --- CORE LINKING: Enforcing relationship to Firebase and physical hub ---
     user_id: str = Field(..., description="Firebase UID")
-    branch_id: UUID = Field(..., description="The physical hub they are assigned to")
+    # Super Admins must send it, but Station Managers have it auto-injected.
+    branch_id: Optional[UUID] = Field(None, description="The physical hub they are assigned to")
     role: UserRole = Field(..., description="STATION_MANAGER or DRIVER")
 
 
