@@ -18,11 +18,12 @@ interface Incidents {
 interface Props {
 
     incidents: Incidents;
+    onResolve: (incidentsId: number) => void;
     onClose: () => void;
 
 }
 
-export default function IncidentsManagementModel({ incidents, onClose }: Props) {
+export default function IncidentsManagementModel({ incidents, onResolve, onClose }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/60" onClick={onClose} />
@@ -133,7 +134,11 @@ export default function IncidentsManagementModel({ incidents, onClose }: Props) 
                     </button>
 
                     {/* TODO: wire to PATCH /api/v1/incidents/{id}/resolve Body: { resolution_notes: str } */}
-                    <button className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                    <button
+                        onClick={() => onResolve(incidents.id)} 
+                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 
+                        text-white text-sm font-semibold rounded-lg transition-colors"
+                    >
                         ✓ Mark as Resolved
                     </button>
                 </div>

@@ -31,14 +31,22 @@ const MOCK_INCIDENTS: Incident[] = [
 
 export default function IncidentsPage() {
 
-
+  const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+
 
   const typeConfig = {
     accident: { label: 'Accident', border: 'border-t-red-500', badge: 'bg-red-500/20 text-red-400' },
     breakdown: { label: 'Breakdown', border: 'border-t-orange-500', badge: 'bg-orange-500/20 text-orange-400' },
     other: { label: 'Other', border: 'border-t-gray-500', badge: 'bg-gray-500/20 text-gray-400' },
   };
+
+  function handleResolve(incidentId: number) {
+    setIncidents((prev) => prev.filter((i) => i.id !== incidentId));
+    setSelectedIncident(null);
+  }
+
+
   return (
     <div className="p-8">
 
@@ -47,7 +55,7 @@ export default function IncidentsPage() {
 
       {/* Incident cards grid will go here */}
       <div className="grid grid-cols-3 gap-4">
-        {MOCK_INCIDENTS.map((incident) => {
+        {incidents.map((incident) => {
           const config = typeConfig[incident.type];
           return (
             <div
@@ -92,6 +100,7 @@ export default function IncidentsPage() {
       {selectedIncident && (
           <IncidentManagementModal
             incidents={selectedIncident}
+            onResolve={handleResolve}
             onClose={() => setSelectedIncident(null)}
           />
       )}
