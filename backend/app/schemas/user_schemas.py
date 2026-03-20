@@ -43,6 +43,21 @@ class UserCreate(UserBase):
     branch_id: UUID = Field(..., description="The physical hub they are assigned to")
     role: UserRole = Field(..., description="STATION_MANAGER or DRIVER")
 
+
+class DriverCreate(UserCreate):
+    """
+    Payload for onboarding a new Driver.
+    Inherits all base identity requirements (NIC, phone, branch, UID) from UserCreate,
+    and adds the specific vehicle/license data needed for the drivers table.
+    """
+    license_number: str = Field(..., description="Official Driving License ID")
+    vehicle_number: str = Field(..., description="License plate number (e.g., WP CAM-1234)")
+    vehicle_type: VehicleType = Field(..., description="MOTORCYCLE, THREE_WHEEL, or LORRY")
+    commission_rate: Optional[float] = Field(
+        None, 
+        description="Override Rate. If left null, backend uses Branch default."
+    )
+
 class UserUpdate(BaseModel):
     """
     Payload for editing an existing user.
@@ -54,6 +69,18 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     fcm_token: Optional[str] = None
+
+class DriverUpdate(UserUpdate):
+    """
+    Payload for updating an existing Driver.
+    Inherits base updates (phone, name, is_active) and adds driver-specific fields.
+    Intentionally excludes driver_id to prevent database relationship breaks.
+    """
+    license_number: Optional[str] = None
+    vehicle_number: Optional[str] = None
+    vehicle_type: Optional[VehicleType] = None
+    commission_rate: Optional[float] = None
+    status: Optional[DriverStatus] = None
 
 # ==========================================
 # 3. OUTBOUND HIERARCHY (Responses)
