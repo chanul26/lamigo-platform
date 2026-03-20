@@ -1,3 +1,4 @@
+from boto3.dynamodb.conditions import Key
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
@@ -59,3 +60,37 @@ def log_call(user_id: str, recipient_phone: str, task_id: str, role: str, durati
         
     except Exception as e:
         logger.error(f"Failed to log Call to DynamoDB: {e}")
+
+def get_sms_history_by_package(package_id: str) -> list:
+    """
+    Fetches all SMS logs for a specific package, newest first.
+    Uses the GSI_PackageHistory index.
+    """
+    try:
+        table = dynamodb_resource.Table("LamiGo_SMSLogs")
+        response = table.query(
+            IndexName='GSI_PackageHistory',
+            KeyConditionExpression=Key('package_id').eq(str(package_id)),
+            ScanIndexForward=False  # False means return the newest messages first
+        )
+        return response.get('Items', [])
+    except Exception as e:
+        logger.error(f"Failed to fetch SMS history for package {package_id}: {e}")
+        return []
+
+def get_call_history_by_user(user_id: str) -> list:
+    """
+    Fetches all Call logs made by a specific employee, newest first.
+    Uses the GSI_UserCallHistory index.
+    """
+    try:
+        table = dynamodb_resource.Table("LamiGo_CallLogs")
+        response = table.query(
+            IndexName='GSI_UserCallHistory',
+            KeyConditionExpression=Key('user_id').eq(str(user_id)),
+            ScanIndexForward=False
+        )
+        return response.get('Items', [])
+    except Exception as e:
+        logger.error(f"Failed to fetch Call history for user {user_id}: {e}")
+        return []
