@@ -46,6 +46,24 @@ async def get_packages(
     current_user: dict = ALL_ACCESS,
     db: AsyncSession = Depends(get_db)
 ):
+    # --- SECURITY OVERRIDE: Prevent cross-branch data leakage ---
+    user_role = current_user.get("role")
+    
+    # Force Station Managers and Drivers to ONLY see their own branch's data
+    if user_role in [UserRole.STATION_MANAGER, UserRole.DRIVER]:
+        secure_user_branch = current_user.get("branch_id")
+        
+        if not secure_user_branch:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Your profile does not have an assigned branch to view packages."
+            )
+            
+        # CRITICAL FIX: We overwrite the 'branch_id' variable with their secure token value.
+        # This completely ignores whatever they tried to send in the URL.
+        branch_id = secure_user_branch
+
+    # If the user is a SUPER_ADMIN, they bypass the if-statement above and can see everything.
     return await package_service.get_all_packages(db, branch_id=branch_id, package_status=package_status)
 
 
