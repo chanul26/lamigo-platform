@@ -7,25 +7,25 @@ import IncidentManagementModal from '@/components/IncidentsManagementModel';
 
 interface Incident {
 
-  id: number;
-  driver_id: number;
+  id: string;
+  driver_id: string;
   driver_name: string;
   phone: string;
-  type: "accident" | "breakdown" | "other";
+  type: "ACCIDENT" | "VEHICLE_BREAKDOWN" | "OTHER";
   description: string;
   location: string;
   reported_at: string;
-  status: "active" | "rescue_assigned" | "resolved";
+  status: "REPORTED" | "INVESTIGATING" | "RESOLVED";
 
 }
 
 // TODO: Replace with useQuery → GET /api/v1/incidents?status=active (poll every 30s)
 const MOCK_INCIDENTS: Incident[] = [
-  { id: 1, driver_id: 1, driver_name: 'Saman Kumara',        phone: '+94771234561', type: 'accident',  description: 'Vehicle collision on highway',   location: 'Colombo - Kandy Road, Km 42', reported_at: '2026-03-17 09:23', status: 'active' },
-  { id: 2, driver_id: 2, driver_name: 'Nimal Perera',        phone: '+94771234562', type: 'breakdown', description: 'Engine failure, cannot move',     location: 'Galle Road, Dehiwala',        reported_at: '2026-03-17 10:05', status: 'active' },
-  { id: 3, driver_id: 3, driver_name: 'Kasun Jayasuriya',    phone: '+94771234563', type: 'other',     description: 'Package damaged by customer',    location: 'Nugegoda Junction',           reported_at: '2026-03-17 11:30', status: 'rescue_assigned' },
-  { id: 4, driver_id: 4, driver_name: 'Amal Silva',          phone: '+94771234564', type: 'accident',  description: 'Minor collision at junction',    location: 'Pettah, Colombo 11',          reported_at: '2026-03-17 12:15', status: 'active' },
-  { id: 5, driver_id: 5, driver_name: 'Ruwan Hettiarachchi', phone: '+94771234565', type: 'breakdown', description: 'Flat tyre, stuck on expressway',  location: 'Southern Expressway, Km 18',  reported_at: '2026-03-17 13:00', status: 'active' },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b64', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl2', driver_name: 'Saman Kumara',        phone: '+94771234561', type: 'ACCIDENT',           description: 'Vehicle collision on highway',   location: 'Colombo - Kandy Road, Km 42', reported_at: '2026-03-17 09:23', status: 'REPORTED'     },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b65', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl3', driver_name: 'Nimal Perera',        phone: '+94771234562', type: 'VEHICLE_BREAKDOWN',  description: 'Engine failure, cannot move',    location: 'Galle Road, Dehiwala',        reported_at: '2026-03-17 10:05', status: 'REPORTED'     },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b66', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl4', driver_name: 'Kasun Jayasuriya',    phone: '+94771234563', type: 'OTHER',              description: 'Package damaged by customer',   location: 'Nugegoda Junction',           reported_at: '2026-03-17 11:30', status: 'INVESTIGATING'},
+  { id: 'f1225531-a94d-48ac-958f-d94622015b67', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl5', driver_name: 'Amal Silva',          phone: '+94771234564', type: 'ACCIDENT',           description: 'Minor collision at junction',   location: 'Pettah, Colombo 11',          reported_at: '2026-03-17 12:15', status: 'REPORTED'     },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b68', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl6', driver_name: 'Ruwan Hettiarachchi', phone: '+94771234565', type: 'VEHICLE_BREAKDOWN',  description: 'Flat tyre, stuck on expressway', location: 'Southern Expressway, Km 18', reported_at: '2026-03-17 13:00', status: 'REPORTED'     },
 ];
 
 
@@ -36,12 +36,14 @@ export default function IncidentsPage() {
 
 
   const typeConfig = {
-    accident: { label: 'Accident', border: 'border-t-red-500', badge: 'bg-red-500/20 text-red-400' },
-    breakdown: { label: 'Breakdown', border: 'border-t-orange-500', badge: 'bg-orange-500/20 text-orange-400' },
-    other: { label: 'Other', border: 'border-t-gray-500', badge: 'bg-gray-500/20 text-gray-400' },
+  ACCIDENT:           { label: 'Accident',           border: 'border-t-red-500',    badge: 'bg-red-500/20 text-red-400'       },
+  VEHICLE_BREAKDOWN:  { label: 'Breakdown',          border: 'border-t-orange-500', badge: 'bg-orange-500/20 text-orange-400' },
+  TRAFFIC_POLICE:     { label: 'Traffic Police',     border: 'border-t-blue-500',   badge: 'bg-blue-500/20 text-blue-400'     },
+  MEDICAL_EMERGENCY:  { label: 'Medical Emergency',  border: 'border-t-pink-500',   badge: 'bg-pink-500/20 text-pink-400'     },
+  OTHER:              { label: 'Other',              border: 'border-t-gray-500',   badge: 'bg-gray-500/20 text-gray-400'     },
   };
 
-  function handleResolve(incidentId: number) {
+  function handleResolve(incidentId: string) {
     setIncidents((prev) => prev.filter((i) => i.id !== incidentId));
     setSelectedIncident(null);
   }
@@ -72,7 +74,7 @@ export default function IncidentsPage() {
                 <Avatar name={incident.driver_name} size="md" />
                 <div>
                   <p className="font-medium text-white">{incident.driver_name}</p>
-                  <p className="text-xs text-[#6B7280]">#DRV-00{incident.driver_id}</p>
+                  <p className="text-xs text-[#6B7280]">{incident.driver_id.substring(0, 8)}</p>
                 </div>
               </div>
 

@@ -5,20 +5,20 @@ import Avatar from "@/components/Avatar";
 
 interface Incidents {
 
-    id: number;
-    driver_id: number;
+    id: string;
+    driver_id: string;
     driver_name: string;
-    type: 'accident' | 'breakdown' | 'other';
+    type: 'ACCIDENT' | 'VEHICLE_BREAKDOWN' | 'OTHER';
     description: string;
     location: string;
     reported_at: string;
-    status: 'active' | 'rescue_assigned' | 'resolved';
+    status: 'REPORTED' | 'INVESTIGATING' | 'RESOLVED';
 }
 
 interface Props {
 
     incidents: Incidents;
-    onResolve: (incidentsId: number) => void;
+    onResolve: (incidentsId: string) => void;
     onClose: () => void;
 
 }
@@ -66,7 +66,7 @@ export default function IncidentsManagementModel({ incidents, onResolve, onClose
                         <Avatar name={incidents.driver_name} size="md" />
                         <div>
                             <p className="font-medium text-white">{incidents.driver_name}</p>
-                            <p className="text-xs text-[#6B7280]">#DRV-00{incidents.driver_id}</p>
+                            <p className="text-xs text-[#6B7280]">{incidents.driver_id.substring(0, 8)}</p>
                         </div>
                     </div>
 

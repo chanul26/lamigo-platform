@@ -5,10 +5,10 @@ import Avatar from "@/components/Avatar";
 
 
 interface ResolvedIncident {
-    id: number;
-    driver_id: number;
+    id: string;
+    driver_id: string;
     driver_name: string;
-    type: 'accident' | 'breakdown' | 'other';
+    type: 'ACCIDENT' | 'VEHICLE_BREAKDOWN' | 'TRAFFIC_POLICE' | 'MEDICAL_EMERGENCY' | 'OTHER';
     description: string;
     resolved_at: string;
     trip_id: string;
@@ -16,12 +16,13 @@ interface ResolvedIncident {
 
 // TODO: Replace with useQuery → GET /api/v1/incidents?status=resolved when Heshadha delivers incidents.py
 const MOCK_RESOLVED: ResolvedIncident[] = [
-  { id: 1, driver_id: 1, driver_name: 'Saman Kumara',        type: 'accident',  description: 'Vehicle collision on highway',   resolved_at: '2026-03-10 14:30', trip_id: 'TRP-001' },
-  { id: 2, driver_id: 2, driver_name: 'Nimal Perera',        type: 'breakdown', description: 'Engine failure, cannot move',     resolved_at: '2026-03-11 10:15', trip_id: 'TRP-002' },
-  { id: 3, driver_id: 3, driver_name: 'Kasun Jayasuriya',    type: 'other',     description: 'Package damaged by customer',    resolved_at: '2026-03-12 09:45', trip_id: 'TRP-003' },
-  { id: 4, driver_id: 4, driver_name: 'Amal Silva',          type: 'accident',  description: 'Minor collision at junction',    resolved_at: '2026-03-13 16:00', trip_id: 'TRP-004' },
-  { id: 5, driver_id: 5, driver_name: 'Ruwan Hettiarachchi', type: 'breakdown', description: 'Flat tyre, stuck on expressway', resolved_at: '2026-03-14 11:30', trip_id: 'TRP-005' },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b64', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl2', driver_name: 'Saman Kumara',        type: 'ACCIDENT',          description: 'Vehicle collision on highway',   resolved_at: '2026-03-10 14:30', trip_id: 'TRP-001' },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b65', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl3', driver_name: 'Nimal Perera',        type: 'VEHICLE_BREAKDOWN', description: 'Engine failure, cannot move',     resolved_at: '2026-03-11 10:15', trip_id: 'TRP-002' },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b66', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl4', driver_name: 'Kasun Jayasuriya',    type: 'OTHER',             description: 'Package damaged by customer',    resolved_at: '2026-03-12 09:45', trip_id: 'TRP-003' },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b67', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl5', driver_name: 'Amal Silva',          type: 'ACCIDENT',          description: 'Minor collision at junction',    resolved_at: '2026-03-13 16:00', trip_id: 'TRP-004' },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b68', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl6', driver_name: 'Ruwan Hettiarachchi', type: 'VEHICLE_BREAKDOWN', description: 'Flat tyre, stuck on expressway', resolved_at: '2026-03-14 11:30', trip_id: 'TRP-005' },
 ];
+
 
 export default function ResolvedIncidentsPage() {
     return (
@@ -92,9 +93,11 @@ export default function ResolvedIncidentsPage() {
                             const isLast = i === MOCK_RESOLVED.length - 1;
 
                             const typeConfig = {
-                                accident:  { label: 'Accident',  badge: 'bg-red-500/20 text-red-400'       },
-                                breakdown: { label: 'Breakdown', badge: 'bg-orange-500/20 text-orange-400' },
-                                other:     { label: 'Other',     badge: 'bg-gray-500/20 text-gray-400'     },
+                                ACCIDENT: { label: 'Accident', badge: 'bg-red-500/20 text-red-400' },
+                                VEHICLE_BREAKDOWN: { label: 'Breakdown', badge: 'bg-orange-500/20 text-orange-400' },
+                                TRAFFIC_POLICE: { label: 'Traffic Police', badge: 'bg-blue-500/20 text-blue-400' },
+                                MEDICAL_EMERGENCY: { label: 'Medical Emergency', badge: 'bg-pink-500/20 text-pink-400' },
+                                OTHER: { label: 'Other', badge: 'bg-gray-500/20 text-gray-400' },
                             };
 
                             const config = typeConfig[incident.type];
@@ -120,7 +123,7 @@ export default function ResolvedIncidentsPage() {
                                             <Avatar name={incident.driver_name} size="sm" />
                                             <div>
                                                 <p className="font-medium text-white">{incident.driver_name}</p>
-                                                <p className="text-xs text-[#6B7280]">#DRV-00{incident.driver_id}</p>
+                                                <p className="text-xs text-[#6B7280]">{incident.driver_id.substring(0, 8)}</p>
                                             </div>
                                         </div>
                                     </td>
