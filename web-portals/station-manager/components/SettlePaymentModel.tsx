@@ -4,22 +4,22 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 
 interface DriverSettlement {
-    id: number;
-    driver_id: number;
+    id: string;
+    driver_id: string;
     driver_name: string;
     total_pending: number;
 }
 
 interface Props {
     settlement: DriverSettlement;
-    onSuccess: (settlementId: number) => void;
+    onSuccess: (settlementId: string) => void;
     onClose: () => void;
 }
 
 export default function SettlePaymentModal({ settlement, onSuccess, onClose }: Props) {
 
 
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer'>('cash');
+    const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
 
     // Tracks the amount entered by the user
     const [amount, setAmount] = useState(settlement.total_pending);
@@ -97,25 +97,20 @@ export default function SettlePaymentModal({ settlement, onSuccess, onClose }: P
                         </div>
 
                         {/* Payment Method */}
-                        <button
-                            onClick={() => setPaymentMethod('cash')}
-                            className={`w-full py-2.5 text-sm font-medium rounded-lg border transition-colors ${paymentMethod === 'cash'
-                                    ? 'bg-blue-600 border-blue-600 text-white'
-                                    : 'bg-[#121212] border-[#2E2E2E] text-[#A1A1A1] hover:border-blue-600/50'
-                                }`}
-                        >
-                            Cash Handover
-                        </button>
-
-                        <button
-                            onClick={() => setPaymentMethod('bank_transfer')}
-                            className={`w-full py-2.5 text-sm font-medium rounded-lg border transition-colors ${paymentMethod === 'bank_transfer'
-                                    ? 'bg-blue-600 border-blue-600 text-white'
-                                    : 'bg-[#121212] border-[#2E2E2E] text-[#A1A1A1] hover:border-blue-600/50'
-                                }`}
-                        >
-                            Bank Transfer
-                        </button>
+                        <div className="flex flex-col gap-2">
+                            {(['CASH', 'BANK_TRANSFER', 'CHEQUE'] as const).map((method) => (
+                                <button
+                                    key={method}
+                                    onClick={() => setPaymentMethod(method)}
+                                    className={`w-full py-2.5 text-sm font-medium rounded-lg border transition-colors ${paymentMethod === method
+                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                            : 'bg-[#121212] border-[#2E2E2E] text-[#A1A1A1] hover:border-blue-600/50'
+                                        }`}
+                                >
+                                    {method === 'CASH' ? 'Cash Handover' : method === 'BANK_TRANSFER' ? 'Bank Transfer' : 'Cheque'}
+                                </button>
+                            ))}
+                        </div>
 
                     </div>
                 </div>
@@ -133,7 +128,8 @@ export default function SettlePaymentModal({ settlement, onSuccess, onClose }: P
                         onClick={handleConfirm}
                         disabled={isLoading}
                         className="px-6 py-2.5 bg-blue-600 
-                        hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                        hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors
+                        disabled: opacity-50 disabled:cursor-not-allowed"
                     >
                         Confirm Payment
                     </button>

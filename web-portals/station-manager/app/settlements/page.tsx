@@ -10,8 +10,8 @@ import SettlePaymentModal from '@/components/SettlePaymentModel';
   settlement from the database
   */ }
 interface driverSettlement {
-  id: number;
-  driver_id: number;
+  id: string;
+  driver_id: string;
   driver_name: string;
   total_pending: number;
 }
@@ -20,25 +20,23 @@ interface driverSettlement {
   functionality before integrating with
   the backend API(Place holder for API endpoint) 
   */ }
-const MOCK_SETTLEMENT: driverSettlement[] = [
-  { id: 1, driver_id: 1, driver_name: 'Saman Kumara',        total_pending: 18500 },
-  { id: 2, driver_id: 2, driver_name: 'Nimal Perera',        total_pending: 4200  },
-  { id: 3, driver_id: 3, driver_name: 'Kasun Jayasuriya',    total_pending: 12150 },
-  { id: 4, driver_id: 4, driver_name: 'Amal Silva',          total_pending: 850   },
-  { id: 5, driver_id: 5, driver_name: 'Ruwan Hettiarachchi', total_pending: 5600  },
-  { id: 6, driver_id: 6, driver_name: 'Sunil Tennakoon',     total_pending: 0     },
-  { id: 7, driver_id: 7, driver_name: 'Sumantha Madawachi',     total_pending: 0  },
-
+const MOCK_SETTLEMENTS: driverSettlement[] = [
+  { id: 'f1225531-a94d-48ac-958f-d94622015b64', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl2', driver_name: 'Saman Kumara',        total_pending: 18500 },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b65', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl3', driver_name: 'Nimal Perera',        total_pending: 4200  },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b66', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl4', driver_name: 'Kasun Jayasuriya',    total_pending: 12150 },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b67', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl5', driver_name: 'Amal Silva',          total_pending: 850   },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b68', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl6', driver_name: 'Ruwan Hettiarachchi', total_pending: 5600  },
+  { id: 'f1225531-a94d-48ac-958f-d94622015b69', driver_id: 'uC2V93X7znQOfrHxtAOt8WkIVFl7', driver_name: 'Sunil Tennakoon',     total_pending: 0     },
 ];
 
 
 export default function SettlementsPage() {
 
-  const [settlements, setSettlements] = useState<driverSettlement[]>(MOCK_SETTLEMENT);
+  const [settlements, setSettlements] = useState<driverSettlement[]>(MOCK_SETTLEMENTS);
   const [selected, setSelected] = useState<driverSettlement | null>(null);
 
   // Called after confirmed payment — resets driver's balance to 0
-  function handlePaymentSuccess(settlementId: number) {
+  function handlePaymentSuccess(settlementId: string) {
     setSettlements((prev) =>
       prev.map((s) => (s.id === settlementId ? { ...s, total_pending: 0 } : s))
     );
@@ -106,7 +104,7 @@ export default function SettlementsPage() {
                       <Avatar name={s.driver_name} />
                       <div>
                         <p className="font-medium text-white">{s.driver_name}</p>
-                        <p className="text-xs text-[#6B7280] mt-0.5">#DRV-00{s.driver_id}</p>
+                        <p className="text-xs text-[#6B7280] mt-0.5">{s.driver_id.substring(0, 8)}</p>
                       </div>
                     </div>
                   </td>
