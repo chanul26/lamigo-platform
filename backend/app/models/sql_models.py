@@ -192,11 +192,14 @@ class Package(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class DeliveryPreference(Base):
-    """Calendar constraints set by recipients."""
+    """Calendar constraints set by recipients for a specific package."""
     __tablename__ = 'delivery_preferences'
 
     preference_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    recipient_id = Column(UUID(as_uuid=True), ForeignKey('recipients.recipient_id'), nullable=False)
+    
+    # 🚨 THE FIX: Changed from recipient_id to package_id to match the ER Diagram
+    package_id = Column(UUID(as_uuid=True), ForeignKey('packages.package_id'), nullable=False) 
+    
     target_date = Column(Date, nullable=False) # Specific day on the calendar
     status = Column(SQLEnum(PreferenceStatus), nullable=False) # Available, Unavailable, Neutral
     created_at = Column(DateTime(timezone=True), server_default=func.now())
