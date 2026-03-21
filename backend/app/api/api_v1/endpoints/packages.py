@@ -86,4 +86,21 @@ async def update_package(
     current_user: dict = MANAGER_ACCESS,
     db: AsyncSession = Depends(get_db)
 ):
+    # 1. Fetch the existing package FIRST to check who owns it
+    existing_package = await package_service.get_package(db, package_id)
+    
+    # 2. SECURITY OVERRIDE: Prevent cross-branch tampering (Write-Level IDOR)
+    user_role = current_user.get("role")
+    
+    if user_role == UserRole.STATION_MANAGER:
+        secure_user_branch = current_user.get("branch_id")
+        
+        # If the package's branch does not match the manager's secure branch token, block them!
+        if existing_package.branch_id != secure_user_branch:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access Denied: You cannot update packages that belong to another branch."
+            )
+
+    # 3. If the security check passes (or if they are a SUPER_ADMIN), proceed with the update
     return await package_service.update_package(db, package_id, payload)
