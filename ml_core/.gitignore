@@ -11,6 +11,7 @@ __pycache__/
 # Generated Simulation Data (Do not commit large datasets!)
 data/
 maps/
+simulator/temp_debug_pipeline.csv
 
 # OS Files
 .DS_Store
