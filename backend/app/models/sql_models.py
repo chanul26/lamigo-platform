@@ -13,8 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from sqlalchemy.orm import declarative_base
-
+from sqlalchemy.orm import declarative_base, relationship
 # Import all 18 Enums from the LamiGo enums.py file
 from app.models.enums import (
     UserRole, VehicleType, DriverStatus, LocationType, PreferenceStatus,
@@ -169,6 +168,12 @@ class Package(Base):
     package_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tracking_id = Column(String(20), nullable=False, unique=True) # Public ID (e.g., LMG-8921)
     recipient_id = Column(UUID(as_uuid=True), ForeignKey('recipients.recipient_id')) # Linked profile
+
+
+    # --- ADD THIS EXACT LINE ---
+    recipient = relationship("Recipient")
+    # ---------------------------
+
     branch_id = Column(UUID(as_uuid=True), ForeignKey('branches.branch_id'), nullable=False) # Strictly enforces physical accountability
     status = Column(SQLEnum(PackageStatus), default=PackageStatus.TO_BE_DELIVERED) # Current state
     
@@ -192,11 +197,14 @@ class Package(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class DeliveryPreference(Base):
-    """Calendar constraints set by recipients."""
+    """Calendar constraints set by recipients for a specific package."""
     __tablename__ = 'delivery_preferences'
 
     preference_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    recipient_id = Column(UUID(as_uuid=True), ForeignKey('recipients.recipient_id'), nullable=False)
+    
+    # 🚨 THE FIX: Changed from recipient_id to package_id to match the ER Diagram
+    package_id = Column(UUID(as_uuid=True), ForeignKey('packages.package_id'), nullable=False) 
+    
     target_date = Column(Date, nullable=False) # Specific day on the calendar
     status = Column(SQLEnum(PreferenceStatus), nullable=False) # Available, Unavailable, Neutral
     created_at = Column(DateTime(timezone=True), server_default=func.now())
