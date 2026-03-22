@@ -8,6 +8,7 @@ export default function PackagesPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
+      
       {/* Header */}
       <div className="mb-8 flex justify-between items-center">
         <div>
@@ -33,12 +34,14 @@ export default function PackagesPage() {
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Phone Number</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Address</th>
             </tr>
+            
           </thead>
           <tbody className="divide-y divide-gray-200">
             {/* Package Row 1 */}
             <tr className="hover:bg-gray-50">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
+                  
                   <Package size={16} className="text-blue-600" />
                   <span className="text-sm font-medium text-gray-900">#PKG-992</span>
                 </div>
@@ -48,8 +51,10 @@ export default function PackagesPage() {
                   To be Delivered
                 </span>
               </td>
+              
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
+                  
                   <MapPin size={14} className="text-orange-500" />
                   <span className="text-sm">-</span>
                 </div>
@@ -57,9 +62,8 @@ export default function PackagesPage() {
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
                   <Phone size={14} />
-                  <span className="text-sm">077-123-45667</span>
+                  <span className="text-sm">077-123-4567</span>
                 </div>
-                
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
                 No 45, Temple Rd, Colombo
@@ -74,21 +78,19 @@ export default function PackagesPage() {
                   <span className="text-sm font-medium text-gray-900">#PKG-993</span>
                 </div>
               </td>
-              
               <td className="px-6 py-4">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   Assigned
+                  
                 </span>
               </td>
               
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
-                  
                   <MapPin size={14} className="text-green-500" />
                   <span className="text-sm">-</span>
                 </div>
               </td>
-              
               <td className="px-6 py-4">
                 <div className="flex items-center gap-1 text-gray-600">
                   <Phone size={14} />
@@ -96,7 +98,7 @@ export default function PackagesPage() {
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
-                No 12, Galle Road, Mount Lavinia
+                No 12, Galle Rd, Mount Lavinia
               </td>
             </tr>
 
@@ -126,7 +128,7 @@ export default function PackagesPage() {
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600">
-                No 78, Kandy Road, Kaduwela
+                No 78, Kandy Rd, Kaduwela
               </td>
             </tr>
 
@@ -141,7 +143,6 @@ export default function PackagesPage() {
               <td className="px-6 py-4">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   Completed
-                  
                 </span>
               </td>
               <td className="px-6 py-4">
@@ -196,3 +197,4 @@ export default function PackagesPage() {
     </div>
   );
 }
+
