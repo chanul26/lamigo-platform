@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 
-# Import ALL the individual feature routers
 from app.api.api_v1.endpoints import (
     auth, 
     organizations, 
@@ -12,10 +11,8 @@ from app.api.api_v1.endpoints import (
     trips
 )
 
-# Create the master router
 api_router = APIRouter()
 
-# Plug in the features
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(organizations.router, prefix="/organizations", tags=["Organizations"])
 api_router.include_router(branches.router, prefix="/branches", tags=["Branches"])
