@@ -11,7 +11,30 @@ from app.models.enums import UserRole, DriverStatus
 from app.schemas.user_schemas import UserCreate, UserUpdate, DriverCreate, DriverUpdate
 
 
-async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
+def _merge_user_driver(user: User, driver: Driver = None) -> dict:
+    """Helper to merge SQLAlchemy models into a flat dictionary for Pydantic."""
+    data = user.__dict__.copy()
+    if driver:
+        driver_data = driver.__dict__.copy()
+        # Remove SQLAlchemy internal state keys before merging
+        driver_data.pop('_sa_instance_state', None)
+        data.update(driver_data)
+    return data
+
+
+async def _get_user_model(db: AsyncSession, user_id: str) -> User:
+    """
+    INTERNAL HELPER: Fetches the raw SQLAlchemy User model.
+    Used exclusively by update functions so they can modify database fields.
+    """
+    result = await db.execute(select(User).where(User.user_id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
+
+async def create_user(db: AsyncSession, user_in: UserCreate) -> dict:
     """
     Onboards a new Station Manager.
     Automatically provisions their Firebase Auth account and links it to PostgreSQL.
@@ -50,7 +73,6 @@ async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
         )
 
     # 3. POSTGRESQL EXECUTION
-    # Inject the newly generated firebase_uid into the database model
     new_user = User(user_id=firebase_uid, **user_in.model_dump())
     db.add(new_user)
     
@@ -58,10 +80,10 @@ async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
     try:
         await db.commit()
         await db.refresh(new_user)
-        return new_user
+        # Return merged dictionary to satisfy Pydantic
+        return _merge_user_driver(new_user, None)
     except Exception as e:
         await db.rollback()
-        # Clean up Firebase so we don't have ghost accounts if the DB fails
         if firebase_uid:
             auth.delete_user(firebase_uid)
         raise HTTPException(
@@ -70,7 +92,7 @@ async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
         )
 
 
-async def create_driver(db: AsyncSession, driver_in: DriverCreate, created_by_id: str) -> User:
+async def create_driver(db: AsyncSession, driver_in: DriverCreate, created_by_id: str) -> dict:
     """
     All-In-One Onboarding for Drivers.
     Provisions Firebase, creates the base User identity, AND the operational Driver profile.
@@ -115,9 +137,10 @@ async def create_driver(db: AsyncSession, driver_in: DriverCreate, created_by_id
     user_data = driver_in.model_dump(exclude={'license_number', 'vehicle_number', 'vehicle_type', 'commission_rate'})
     driver_data = driver_in.model_dump(include={'license_number', 'vehicle_number', 'vehicle_type', 'commission_rate'})
 
-    # Inject the firebase_uid into BOTH tables
     new_user = User(user_id=firebase_uid, **user_data)
     db.add(new_user)
+
+    await db.flush()
     
     new_driver = Driver(
         driver_id=firebase_uid, 
@@ -131,53 +154,73 @@ async def create_driver(db: AsyncSession, driver_in: DriverCreate, created_by_id
     try:
         await db.commit()
         await db.refresh(new_user)
-        return new_user
+        await db.refresh(new_driver)
+        
+        # Return merged dictionary to satisfy Pydantic
+        return _merge_user_driver(new_user, new_driver)
+        
     except Exception as e:
         await db.rollback()
         if firebase_uid:
             auth.delete_user(firebase_uid)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Database transaction failed. Cleaned up Firebase Auth."
+            detail="Database transaction failed. Cleaned up Firebase."
         )
 
 
-async def get_user(db: AsyncSession, user_id: str) -> User:
-    """Fetches a specific user by their Firebase UID."""
-    result = await db.execute(select(User).where(User.user_id == user_id))
-    user = result.scalars().first()
+async def get_user(db: AsyncSession, user_id: str) -> dict:
+    """
+    PUBLIC API: Fetches a specific user by their Firebase UID.
+    Uses an outerjoin to safely merge driver data if the user is a driver.
+    """
+    query = select(User, Driver).outerjoin(Driver, User.user_id == Driver.driver_id).where(User.user_id == user_id)
+    result = await db.execute(query)
+    row = result.first()
     
-    if not user:
+    if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
+    
+    user, driver = row
+    return _merge_user_driver(user, driver)
 
 
-async def get_user_by_nic(db: AsyncSession, nic_number: str) -> User:
+async def get_user_by_nic(db: AsyncSession, nic_number: str) -> dict:
     """
     Looks up a user strictly by their National Identity Card number.
     Used for frontend search bars where a Manager needs to find a specific staff member.
     """
-    result = await db.execute(select(User).where(User.nic_number == nic_number))
-    user = result.scalars().first()
+    query = select(User, Driver).outerjoin(Driver, User.user_id == Driver.driver_id).where(User.nic_number == nic_number)
+    result = await db.execute(query)
+    row = result.first()
     
-    if not user:
+    if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No user found with NIC: {nic_number}")
-    return user
+        
+    user, driver = row
+    return _merge_user_driver(user, driver)
 
 
-async def get_users_by_branch(db: AsyncSession, branch_id: UUID, role: UserRole = None) -> list[User]:
-    """Fetches staff for a specific branch with optional role filtering."""
-    query = select(User).where(User.branch_id == branch_id)
+async def get_users_by_branch(db: AsyncSession, branch_id: UUID, role: UserRole = None) -> list[dict]:
+    """Fetches staff, joining the driver table to get full operational profiles."""
+    
+    # We outerjoin the Driver table so we get Manager data AND Driver data
+    query = select(User, Driver).outerjoin(Driver, User.user_id == Driver.driver_id).where(User.branch_id == branch_id)
+    
     if role:
         query = query.where(User.role == role)
         
     result = await db.execute(query)
-    return result.scalars().all()
+    rows = result.all()
+    
+    # Merge the joined data into flat dictionaries for the frontend
+    return [_merge_user_driver(user, driver) for user, driver in rows]
 
 
-async def update_user(db: AsyncSession, user_id: str, user_in: UserUpdate) -> User:
+async def update_user(db: AsyncSession, user_id: str, user_in: UserUpdate) -> dict:
     """Updates specific fields of a Station Manager profile."""
-    user = await get_user(db, user_id)
+    # 1. Use internal helper to get the raw SQLAlchemy object
+    user = await _get_user_model(db, user_id)
     
     update_data = user_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -186,15 +229,17 @@ async def update_user(db: AsyncSession, user_id: str, user_in: UserUpdate) -> Us
     await db.commit()
     await db.refresh(user)
     
-    return user
+    # 2. Return merged dictionary (driver is None here)
+    return _merge_user_driver(user, None)
 
 
-async def update_driver(db: AsyncSession, driver_id: str, driver_in: DriverUpdate) -> User:
+async def update_driver(db: AsyncSession, driver_id: str, driver_in: DriverUpdate) -> dict:
     """
     Updates a Driver's profile.
     Smartly routes identity changes to the 'users' table and operational changes to the 'drivers' table.
     """
-    user = await get_user(db, driver_id)
+    # 1. Use internal helper to get the raw SQLAlchemy object
+    user = await _get_user_model(db, driver_id)
     
     driver_result = await db.execute(select(Driver).where(Driver.driver_id == driver_id))
     driver = driver_result.scalars().first()
@@ -216,5 +261,7 @@ async def update_driver(db: AsyncSession, driver_id: str, driver_in: DriverUpdat
             
     await db.commit()
     await db.refresh(user)
+    await db.refresh(driver)
     
-    return user
+    # 2. Return merged dictionary
+    return _merge_user_driver(user, driver)

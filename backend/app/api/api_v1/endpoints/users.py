@@ -43,26 +43,27 @@ async def create_manager(
 async def create_driver(
     driver_in: DriverCreate,
     db: AsyncSession = Depends(deps.get_db),
-    current_user = Depends(deps.RoleChecker([UserRole.SUPER_ADMIN, UserRole.STATION_MANAGER]))
+    current_user: dict = Depends(deps.RoleChecker([UserRole.SUPER_ADMIN, UserRole.STATION_MANAGER]))
 ):
     """Onboard a new Driver, linking their identity and vehicle details simultaneously."""
     if driver_in.role != UserRole.DRIVER:
         raise HTTPException(status_code=400, detail="Role must be DRIVER.")
     
     # --- THE SECURITY OVERRIDE ---
-    # Fetch the actual database record of the logged-in user
-    db_creator = await user_service.get_user(db, current_user.uid)
+    # Safely extract the ID whether they are a Manager (user_id) or a Super Admin (admin_id)
+    current_uid = current_user.get("user_id") or current_user.get("admin_id")
     
-    if db_creator.role == UserRole.STATION_MANAGER:
+    # Since deps.py already fetched the profile, we can read the dictionary directly!
+    if current_user.get("role") == UserRole.STATION_MANAGER:
         # Force the driver into the manager's exact hub, ignoring anything the frontend sent
-        driver_in.branch_id = db_creator.branch_id
+        driver_in.branch_id = current_user.get("branch_id")
         
-    elif db_creator.role == UserRole.SUPER_ADMIN:
+    elif current_user.get("role") == UserRole.SUPER_ADMIN:
         # Super Admins must provide it manually
         if not driver_in.branch_id:
             raise HTTPException(status_code=400, detail="Super Admins must specify a branch_id in the payload.")
     
-    return await user_service.create_driver(db, driver_in, created_by_id=current_user.uid)
+    return await user_service.create_driver(db, driver_in, created_by_id=current_uid)
 
 
 # ==========================================

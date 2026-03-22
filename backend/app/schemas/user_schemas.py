@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, AliasChoices
-from typing import Optional, Union
+from typing import Literal, Optional, List, Annotated, Union
 from datetime import datetime
 from uuid import UUID
+from typing import Annotated
 
 # Import the enums you defined in your database
 from app.models.enums import UserRole, VehicleType, DriverStatus
@@ -112,11 +113,13 @@ class BranchStaffBase(AuthIdentityBase):
 # --- Level 3: The Children (Final API Responses) ---
 class SuperAdminResponse(SuperAdminBase):
     """Final output profile for Swagger/Admin Dashboard."""
+    role: Literal[UserRole.SUPER_ADMIN]
     # --- UPGRADED: Pydantic V2 syntax ---
     model_config = ConfigDict(from_attributes=True) 
 
 class StationManagerResponse(BranchStaffBase):
     """Final output profile for the NextJS Manager App."""
+    role: Literal[UserRole.STATION_MANAGER]
     model_config = ConfigDict(from_attributes=True)
 
 class DriverResponse(BranchStaffBase):
@@ -126,6 +129,7 @@ class DriverResponse(BranchStaffBase):
     vehicle_type: VehicleType
     status: DriverStatus
     commission_rate: Optional[float] = None
+    role: Literal[UserRole.DRIVER]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -133,5 +137,9 @@ class DriverResponse(BranchStaffBase):
 # 4. POLYMORPHIC EXPORTS
 # ==========================================
 
-# Use this in your API routes so FastAPI knows it could return any of these three
-CurrentUserResponse = Union[SuperAdminResponse, StationManagerResponse, DriverResponse]
+# By adding the discriminator='role', FastAPI will check the 'role' field first. 
+# If role == DRIVER, it will strictly use DriverResponse.
+CurrentUserResponse = Annotated[
+    Union[SuperAdminResponse, StationManagerResponse, DriverResponse],
+    Field(discriminator='role')
+]
