@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
 # Import ALL feature routers
-from app.api.api_v1.endpoints import (auth, organizations, branches, users, recipients, packages, preferences, trips
+from app.api.api_v1.endpoints import (
+    auth, organizations, branches, users, 
+    recipients, packages, preferences, trips, incidents
 )
 
 api_router = APIRouter()
@@ -13,5 +15,7 @@ api_router.include_router(users.router, prefix="/users", tags=["Users & Staff"])
 api_router.include_router(recipients.router, prefix="/recipients", tags=["Recipients"])
 api_router.include_router(packages.router, prefix="/packages", tags=["Packages"])
 api_router.include_router(preferences.router, prefix="/preferences", tags=["Delivery Preferences"])
-# Plug in Trips
 api_router.include_router(trips.router, prefix="/trips", tags=["Trips"])
+
+# Plug in Incidents
+api_router.include_router(incidents.router, prefix="/incidents", tags=["Incidents"])
