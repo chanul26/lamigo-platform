@@ -1,0 +1,17 @@
+# Python Virtual Environments
+env/
+venv/
+.venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Generated Simulation Data (Do not commit large datasets!)
+data/
+maps/
+simulator/temp_debug_pipeline.csv
+
+# OS Files
+.DS_Store
