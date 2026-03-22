@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
-# Import ALL feature routers
-from app.api.api_v1.endpoints import (auth, organizations, branches, users, recipients, packages, preferences, trips
+# Import ALL feature routers (Added 'contexts')
+from app.api.api_v1.endpoints import (
+    auth, organizations, branches, users, recipients, 
+    packages, preferences, trips, incidents, tasks, instructions, contexts,drivers
 )
 
 api_router = APIRouter()
@@ -13,5 +15,11 @@ api_router.include_router(users.router, prefix="/users", tags=["Users & Staff"])
 api_router.include_router(recipients.router, prefix="/recipients", tags=["Recipients"])
 api_router.include_router(packages.router, prefix="/packages", tags=["Packages"])
 api_router.include_router(preferences.router, prefix="/preferences", tags=["Delivery Preferences"])
-# Plug in Trips
 api_router.include_router(trips.router, prefix="/trips", tags=["Trips"])
+api_router.include_router(incidents.router, prefix="/incidents", tags=["Incidents"])
+api_router.include_router(tasks.router, prefix="/tasks", tags=["Delivery Tasks"])
+api_router.include_router(instructions.router, prefix="/instructions", tags=["Task Instructions"])
+api_router.include_router(drivers.router, prefix="/drivers", tags=["Driver Operations"])
+
+# Plug in Delivery Contexts
+api_router.include_router(contexts.router, prefix="/contexts", tags=["Delivery Context (ML)"])
