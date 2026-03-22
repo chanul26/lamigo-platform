@@ -10,7 +10,26 @@ from app.models.enums import PackageStatus
 from app.schemas.package_schemas import PackageCreate, PackageUpdate
 from app.services.utils import generate_package_tracking_id
 
-async def create_package_with_recipient(db: AsyncSession, package_data: PackageCreate, branch_id: UUID) -> Package:
+def _package_to_dict(package: Package) -> dict:
+    """
+    Safely converts a SQLAlchemy Package model and its nested recipient 
+    into a dictionary to prevent AsyncSession MissingGreenlet errors.
+    """
+    pkg_dict = package.__dict__.copy()
+    pkg_dict.pop("_sa_instance_state", None)
+    
+    # Safely extract the nested relationship if it was loaded
+    if hasattr(package, "recipient") and package.recipient:
+        rec_dict = package.recipient.__dict__.copy()
+        rec_dict.pop("_sa_instance_state", None)
+        pkg_dict["recipient"] = rec_dict
+    else:
+        pkg_dict["recipient"] = None
+        
+    return pkg_dict
+
+
+async def create_package_with_recipient(db: AsyncSession, package_data: PackageCreate, branch_id: UUID) -> dict:
     """Handles the Recipient Upsert, Tracking ID generation, and Package creation."""
     
     # --- 1. THE RECIPIENT UPSERT ---
@@ -18,7 +37,6 @@ async def create_package_with_recipient(db: AsyncSession, package_data: PackageC
     recipient = result.scalars().first()
 
     if not recipient:
-        # Silently create a new recipient profile in the background
         recipient = Recipient(
             name=package_data.recipient_name,
             phone_number=package_data.recipient_phone,
@@ -30,10 +48,9 @@ async def create_package_with_recipient(db: AsyncSession, package_data: PackageC
             is_location_verified=False
         )
         db.add(recipient)
-        await db.flush() # Flush generates the recipient_id without fully committing the transaction yet
+        await db.flush() 
 
     # --- 2. THE TRACKING ID ---
-    # We use the utility function you already have in app/services/utils.py
     tracking_id = generate_package_tracking_id(branch_id)
 
     # --- 3. CREATE THE PACKAGE ---
@@ -52,7 +69,6 @@ async def create_package_with_recipient(db: AsyncSession, package_data: PackageC
         cod_amount=package_data.cod_amount,
         delivery_charge=package_data.delivery_charge,
         
-        # Snapshot Data
         recipient_name=package_data.recipient_name,
         address=package_data.address,
         gps_lat=package_data.gps_lat,
@@ -61,21 +77,20 @@ async def create_package_with_recipient(db: AsyncSession, package_data: PackageC
     db.add(new_package)
     await db.commit()
     
-    # --- 4. RELOAD WITH RELATIONSHIPS ---
-    # We must reload the package using `selectinload` so SQLAlchemy attaches the nested 
-    # Recipient data for our Pydantic PackageResponse schema to read!
+    # --- 4. RELOAD WITH RELATIONSHIPS AND RETURN AS DICT ---
     final_result = await db.execute(
         select(Package).options(selectinload(Package.recipient)).where(Package.package_id == new_package.package_id)
     )
-    return final_result.scalars().first()
+    package = final_result.scalars().first()
+    return _package_to_dict(package)
 
 
 async def get_all_packages(
     db: AsyncSession, 
     branch_id: Optional[UUID] = None, 
     package_status: Optional[PackageStatus] = None
-) -> List[Package]:
-    """Fetches packages with the nested recipient attached."""
+) -> List[dict]:
+    """Fetches packages with the nested recipient attached and converts to dict."""
     query = select(Package).options(selectinload(Package.recipient))
     
     if branch_id:
@@ -85,25 +100,37 @@ async def get_all_packages(
         
     query = query.order_by(Package.created_at.desc())
     result = await db.execute(query)
-    return list(result.scalars().all())
+    packages = result.scalars().all()
+    
+    return [_package_to_dict(pkg) for pkg in packages]
 
 
-async def get_package(db: AsyncSession, package_id: UUID) -> Package:
+async def get_package(db: AsyncSession, package_id: UUID) -> dict:
+    """Fetches a single package and returns it as a dict."""
     result = await db.execute(
         select(Package).options(selectinload(Package.recipient)).where(Package.package_id == package_id)
     )
     package = result.scalars().first()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
-    return package
+    return _package_to_dict(package)
 
 
-async def update_package(db: AsyncSession, package_id: UUID, package_in: PackageUpdate) -> Package:
-    package = await get_package(db, package_id)
+async def update_package(db: AsyncSession, package_id: UUID, package_in: PackageUpdate) -> dict:
+    """Updates a package. Uses raw SQLAlchemy models for the write, returns a dict."""
+    result = await db.execute(
+        select(Package).options(selectinload(Package.recipient)).where(Package.package_id == package_id)
+    )
+    package = result.scalars().first()
+    
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+        
     update_data = package_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(package, field, value)
+        
     await db.commit()
+    await db.refresh(package)
     
-    # Reload to ensure nested relationship is still attached for response
-    return await get_package(db, package_id)
+    return _package_to_dict(package)
