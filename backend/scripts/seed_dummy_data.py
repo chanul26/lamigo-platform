@@ -3,6 +3,7 @@ import sys
 import os
 from decimal import Decimal
 from datetime import datetime, timezone
+import selectors
 
 # Adjust the path so the script can see the 'app' folder
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -157,4 +158,4 @@ async def seed_data():
     print("="*60 + "\n")
 
 if __name__ == "__main__":
-    asyncio.run(seed_data())
+    asyncio.run(seed_data(), loop_factory=lambda: asyncio.SelectorEventLoop(selectors.SelectSelector()))
