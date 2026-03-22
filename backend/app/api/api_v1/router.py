@@ -15,11 +15,7 @@ api_router.include_router(organizations.router, prefix="/organizations", tags=["
 api_router.include_router(branches.router, prefix="/branches", tags=["Branches"])
 api_router.include_router(recipients.router, prefix="/recipients", tags=["Recipients"])
 
-# Incoming features from dev
-api_router.include_router(users.router, prefix="/users", tags=["Users & Staff"])
-api_router.include_router(packages.router, prefix="/packages", tags=["Packages"])
-api_router.include_router(preferences.router, prefix="/preferences", tags=["Delivery Preferences"])
-api_router.include_router(trips.router, prefix="/trips", tags=["Trips"])
+
 
 # Chanul's new feature
 api_router.include_router(incidents.router, prefix="/incidents", tags=["Incidents"])
