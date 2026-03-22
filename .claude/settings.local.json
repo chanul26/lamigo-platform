@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'd:\\\\IIT\\\\Year 2 Semester 2\\\\SDGP Implementation\\\\LamiGo\\\\lamigo-platform/backend' -type f \\\\\\(-name *.py -o -name *.ts -o -name *.tsx \\\\\\))",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}
