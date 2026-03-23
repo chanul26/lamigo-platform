@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "461121459169",
+    "project_id": "lamigo-core",
+    "storage_bucket": "lamigo-core.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461121459169:android:45252994af482cb17238a0",
+        "android_client_info": {
+          "package_name": "com.example.lamigo_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnjrnMDtZ4S-fZIe7X5NqYVrlxpWVu2Lw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
