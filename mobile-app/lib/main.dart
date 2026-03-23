@@ -5,10 +5,8 @@ import 'Features/Splash/Presentation/splash_screen.dart';
 import 'Features/Auth/Presentation/login_screen.dart';
 import 'Features/Home/Presentation/home_screen.dart';
 import 'Features/Trip/Presentation/trip_screen.dart';
-<<<<<<< HEAD
 import 'Features/Trip/Presentation/stop_detail_screen.dart';
-=======
->>>>>>> 22bfb77afff900807015d468edb7dcd53f61b0f4
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
