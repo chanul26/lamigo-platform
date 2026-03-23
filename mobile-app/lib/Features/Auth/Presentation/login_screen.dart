@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,23 +15,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final _storage = const FlutterSecureStorage();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // AUTHENTICATION: Using Firebase SDK instead of /api/health
+      // ✅ FIX: Using Firebase Email/Pass SDK (Requirement: Replace /api/health)
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // TOKEN RETRIEVAL: Get JWT from Firebase
+      // ✅ FIX: Retrieve JWT Token
       String? token = await userCredential.user?.getIdToken();
 
       if (token != null) {
-        //SECURE STORAGE: Save JWT safely 
+        // ✅ FIX: Store in Secure Storage (Requirement: No SharedPreferences)
         await _storage.write(key: 'jwt_token', value: token);
 
         if (mounted) {
@@ -42,10 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } on FirebaseAuthException catch (e) {
-      String message = "Auth Error: ${e.code}";
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
+          SnackBar(content: Text("Auth Error: ${e.code}"), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -56,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF121212), // Dark theme as per project style
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -67,22 +73,35 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _emailController,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: "Email", labelStyle: TextStyle(color: Colors.grey)),
+              decoration: const InputDecoration(
+                labelText: "Email", 
+                labelStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: "Password", labelStyle: TextStyle(color: Colors.grey)),
+              decoration: const InputDecoration(
+                labelText: "Password", 
+                labelStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                child: _isLoading ? const CircularProgressIndicator() : const Text("SIGN IN"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white) 
+                  : const Text("SIGN IN", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],

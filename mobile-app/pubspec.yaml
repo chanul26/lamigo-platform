@@ -14,6 +14,7 @@ dependencies:
   http: ^1.6.0
   flutter_svg: ^2.0.9
 
+<<<<<<< HEAD
   # --- ADDED BY STUDENT B FOR AUTH & TRACKING ---
   firebase_core: ^3.10.1
   firebase_auth: ^5.4.1
@@ -21,6 +22,12 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   geolocator: ^13.0.1
   # ----------------------------------------------
+=======
+  #firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  flutter_secure_storage: ^9.0.0
+>>>>>>> dev
 
 dev_dependencies:
   flutter_test:
