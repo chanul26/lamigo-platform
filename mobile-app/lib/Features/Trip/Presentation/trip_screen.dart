@@ -160,14 +160,7 @@ class _TripScreenState extends State<TripScreen> {
                 final stop = MOCK_STOPS[index];
                 return GestureDetector(
                   onTap: () {
-                    // TODO: Navigator.pushNamed(context, '/stop-detail', arguments: stop.id)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Stop ${stop.sequence}: ${stop.recipientName}',
-                        ),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/stop-detail', arguments: stop.id);
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
