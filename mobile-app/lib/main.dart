@@ -4,6 +4,10 @@ import 'firebase_options.dart';
 import 'Features/Splash/Presentation/splash_screen.dart';
 import 'Features/Auth/Presentation/login_screen.dart';
 import 'Features/Home/Presentation/home_screen.dart';
+import 'Features/Trip/Presentation/trip_screen.dart';
+import 'Features/Trip/Presentation/stop_detail_screen.dart';
+import 'Features/Trip/Presentation/emergency_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,11 +18,16 @@ void main() async {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
+      initialRoute: '/trip',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/trip': (context) => const TripScreen(tripId: 'TRP-001'),
+        '/stop-detail': (context) =>  StopDetailScreen(stopId: 'STOP-001'),
+        '/emergency': (context) => const EmergencyScreen(tripId: 'TRP-001'),
+
+
       },
     ),
   );
