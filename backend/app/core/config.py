@@ -21,6 +21,11 @@ class Settings:
     SECRET_KEY: str | None = os.getenv("SECRET_KEY")
     FIREBASE_CREDENTIALS_PATH: str | None = os.getenv("FIREBASE_CREDENTIALS_PATH")
     
+    # --- AWS Credentials for DynamoDB ---
+    AWS_ACCESS_KEY_ID: str | None = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: str | None = os.getenv("AWS_SECRET_ACCESS_KEY")
+    AWS_REGION: str | None = os.getenv("AWS_REGION")
+
     # We fetch the raw string first, then parse it into a list in __init__
     _CORS_ORIGINS_RAW: str | None = os.getenv("BACKEND_CORS_ORIGINS")
     BACKEND_CORS_ORIGINS: list[str] = []
@@ -37,6 +42,14 @@ class Settings:
             
         if not self.FIREBASE_CREDENTIALS_PATH:
             raise ValueError("❌ CRITICAL ERROR: FIREBASE_CREDENTIALS_PATH is missing! Check your .env file.")
+
+        # --- AWS Validation ---
+        if not self.AWS_ACCESS_KEY_ID:
+            raise ValueError("❌ CRITICAL ERROR: AWS_ACCESS_KEY_ID is missing! Check your .env file.")
+        if not self.AWS_SECRET_ACCESS_KEY:
+            raise ValueError("❌ CRITICAL ERROR: AWS_SECRET_ACCESS_KEY is missing! Check your .env file.")
+        if not self.AWS_REGION:
+            raise ValueError("❌ CRITICAL ERROR: AWS_REGION is missing! Check your .env file.")
 
         # --- CORS Validation and Parsing ---
         if not self._CORS_ORIGINS_RAW:
