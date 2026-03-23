@@ -3,7 +3,7 @@ from fastapi import APIRouter
 # Import ALL feature routers (Added 'commissions')
 from app.api.api_v1.endpoints import (
     auth, organizations, branches, users, recipients, 
-    packages, preferences, trips, incidents, tasks, instructions, contexts, drivers, commissions, financial_profiles
+    packages, preferences, trips, incidents, tasks, instructions, contexts, drivers, commissions, financial_profiles,tracking, communication
 )
 
 api_router = APIRouter()
