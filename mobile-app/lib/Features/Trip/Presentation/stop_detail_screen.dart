@@ -155,8 +155,15 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: launchUrl Google Maps
+                      // TODO: Launch Google Maps when API key is configured
                       // url_launcher: https://www.google.com/maps/dir/?api=1&destination=${MOCK_STOP.gpsLat},${MOCK_STOP.gpsLng}
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Navigation will be available when Google Maps is configured',
+                          ),
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.navigation, color: Colors.white),
                     label: const Text(
