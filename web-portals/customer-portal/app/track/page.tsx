@@ -12,7 +12,7 @@ function TrackingContent() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Poll every 30s for ETA and Driver Position
+  // Poll every 30s: ETA and Driver's position
   useEffect(() => {
     if (!token) {
       setLoading(false);
