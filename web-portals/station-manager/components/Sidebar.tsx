@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Truck,
@@ -65,20 +65,25 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    router.push('/');
+  };
 
   return (
     <aside
-      className="fixed left-0 top-0 h-screen flex flex-col justify-between py-6 px-4"
+      className="fixed left-0 top-0 h-screen flex flex-col justify-between py-6 px-4 z-50"
       style={{
         width: 'var(--sidebar-width)',
         backgroundColor: 'var(--card-bg)',
         borderRight: '1px solid var(--border-color)',
       }}
     >
-      {/* Logo */}
+      {/* Top Section: Logo & Nav */}
       <div>
         <div className="px-4 mb-8">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/dashboard" className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-[var(--border-radius-sm)] flex items-center justify-center font-bold text-white text-lg"
               style={{ backgroundColor: 'var(--primary-blue)' }}
@@ -96,10 +101,11 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation Links */}
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            // If current path starts with item href keep active on sub-routes
+            const isActive = pathname.startsWith(item.href);
 
             return (
               <Link
@@ -131,9 +137,10 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Sign Out Button */}
+      {/* Bottom Section: Sign Out */}
       <div className="px-2">
         <button
+          onClick={handleSignOut}
           className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--border-radius-sm)] transition-all duration-200"
           style={{
             color: 'var(--status-failed)',

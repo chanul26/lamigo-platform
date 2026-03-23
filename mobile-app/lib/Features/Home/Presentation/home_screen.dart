@@ -6,22 +6,23 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'LamiGo Driver',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text("LamiGo Driver"),
+        backgroundColor: Colors.black,
       ),
-      body: const Center(
-        child: Text(
-          'Loading trips...',
-          style: TextStyle(color: Colors.grey),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("Welcome back, Driver!", style: TextStyle(color: Colors.white, fontSize: 18)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/trip'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+              child: const Text("View Active Trip"),
+            ),
+          ],
         ),
       ),
     );
