@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 
 class StopDetail {
   final String id;
@@ -184,8 +185,9 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
                 // Call button
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: FlutterPhoneDirectCaller.callNumber(MOCK_STOP.phone)
+                    onPressed : () async{
+                      // TODO: Replace MOCK_STOP.phone with actual phone number from GET /api/v1/tasks/{task_id}
+                      await FlutterPhoneDirectCaller.callNumber(MOCK_STOP.phone);
                     },
                     icon: const Icon(Icons.call, color: Colors.white),
                     label: const Text(
