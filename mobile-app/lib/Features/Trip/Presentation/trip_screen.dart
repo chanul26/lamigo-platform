@@ -106,7 +106,7 @@ class _TripScreenState extends State<TripScreen> {
           IconButton(
             icon: const Icon(Icons.warning_amber, color: Colors.orange),
             onPressed: () {
-              // TODO: Navigator.pushNamed(context, '/emergency')
+              Navigator.pushNamed(context, '/emergency');
             },
           ),
         ],

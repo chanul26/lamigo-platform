@@ -6,6 +6,7 @@ import 'Features/Auth/Presentation/login_screen.dart';
 import 'Features/Home/Presentation/home_screen.dart';
 import 'Features/Trip/Presentation/trip_screen.dart';
 import 'Features/Trip/Presentation/stop_detail_screen.dart';
+import 'Features/Trip/Presentation/emergency_screen.dart';
 
 
 void main() async {
@@ -23,11 +24,10 @@ void main() async {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/trip': (context) => const TripScreen(tripId: 'TRP-001'),
-<<<<<<< HEAD
         '/stop-detail': (context) =>  StopDetailScreen(stopId: 'STOP-001'),
+        '/emergency': (context) => const EmergencyScreen(tripId: 'TRP-001'),
 
-=======
->>>>>>> 22bfb77afff900807015d468edb7dcd53f61b0f4
+
       },
     ),
   );
