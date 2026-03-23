@@ -121,6 +121,37 @@ export const apiClient = {
 };
 
 /**
+ * Calls the backend logout endpoint and clears the locally stored token.
+ * Pass an explicit token when you have one (e.g. straight after Firebase auth),
+ * otherwise it falls back to the value stored in localStorage.
+ */
+export async function logoutUser(token?: string): Promise<void> {
+  const storedToken =
+    token ??
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('lamigo_station_token')
+      : null);
+
+  if (storedToken) {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${storedToken}`,
+        },
+      });
+    } catch {
+      // Best-effort — don't block the local logout if the network fails
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('lamigo_station_token');
+  }
+}
+
+/**
  * Health check utility
  */
 export async function checkApiHealth(): Promise<boolean> {

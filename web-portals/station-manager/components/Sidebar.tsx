@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Truck,
@@ -13,6 +14,9 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { logoutUser } from '@/lib/api';
 
 interface NavItem {
   label: string;
@@ -65,6 +69,23 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setIsSigningOut(true);
+    try {
+      // 1. Tell backend to clear FCM token + revoke Firebase session
+      await logoutUser();
+      // 2. Sign out from Firebase client
+      await signOut(auth);
+    } catch {
+      // Best-effort — still redirect even if network fails
+    } finally {
+      setIsSigningOut(false);
+      router.push('/');
+    }
+  }
 
   return (
     <aside
@@ -134,20 +155,25 @@ export default function Sidebar() {
       {/* Sign Out Button */}
       <div className="px-2">
         <button
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--border-radius-sm)] transition-all duration-200"
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--border-radius-sm)] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
             color: 'var(--status-failed)',
             backgroundColor: 'transparent',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--status-failed-bg)';
+            if (!isSigningOut)
+              e.currentTarget.style.backgroundColor = 'var(--status-failed-bg)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
           }}
         >
           <LogOut size={20} />
-          <span className="font-medium text-sm">Sign Out</span>
+          <span className="font-medium text-sm">
+            {isSigningOut ? 'Signing out…' : 'Sign Out'}
+          </span>
         </button>
       </div>
     </aside>
