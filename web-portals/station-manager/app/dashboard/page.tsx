@@ -27,12 +27,12 @@ export default function DashboardPage() {
         setIsLoading(true);
         setError(null);
 
-        // Fetch all necessary data concurrently for speed
+        // BULLETPROOF FIX: Catch individual 404s so one missing backend route doesn't crash the whole page
         const [packages, trips, settlements, incidents] = await Promise.all([
-          apiClient.getPackages(),
-          apiClient.getTrips(),
-          apiClient.getSettlements(),
-          apiClient.getIncidents()
+          apiClient.getPackages().catch((e) => { console.warn("Packages missing/failed:", e); return []; }),
+          apiClient.getTrips().catch((e) => { console.warn("Trips missing/failed:", e); return []; }),
+          apiClient.getSettlements().catch((e) => { console.warn("Settlements missing/failed:", e); return []; }),
+          apiClient.getIncidents().catch((e) => { console.warn("Incidents missing/failed:", e); return []; })
         ]);
 
         const pendingPkgs = packages.filter((p: any) => p.status === 'TO_BE_DELIVERED').length;
