@@ -9,23 +9,40 @@
 // Package Types (mirrors schemas/package.py)
 // ============================================
 
-export type PackageStatus = 'Pending' | 'In Transit' | 'Delivered' | 'Returned';
+export type PackageStatus = 'TO_BE_DELIVERED' | 'DRAFT' | 'SCHEDULED' | 'ON_TRIP' | 'DELIVERING_NOW' | 'COMPLETED' | 'FAILED';
+export type LocationType = 'HOME' | 'APARTMENT' | 'OFFICE' | 'WAREHOUSE' | 'RETAIL_STORE' | 'OTHER';
 
-export interface PackageBase {
-  tracking_number: string;
+export interface PackageCreate {
+  weight: number;
+  is_cod: boolean;
+  cod_amount: number;
+  delivery_charge: number;
+  sender_name: string;
+  sender_phone?: string;
+  sender_address?: string;
   recipient_name: string;
-  delivery_address: string;
+  recipient_phone: string;
+  address: string;
+  location_type?: LocationType;
+  floor_number?: string;
+  gps_lat: number;
+  gps_lng: number;
+}
+
+export interface Package {
+  package_id: string;
+  tracking_id: string;
+  branch_id: string;
   status: PackageStatus;
-}
-
-export interface PackageCreate extends PackageBase {
-  station_id?: number;
-}
-
-export interface Package extends PackageBase {
-  id: number;
-  assigned_driver_id?: number;
-  created_at: string; // ISO datetime string from JSON
+  weight: number;
+  is_cod: boolean;
+  cod_amount: number;
+  delivery_charge: number;
+  sender_name: string;
+  recipient_name: string;
+  recipient_phone?: string;
+  address: string;
+  created_at: string;
 }
 
 // ============================================

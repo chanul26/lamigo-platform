@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import LayoutWithOptionalSidebar from '@/components/LayoutWithOptionalSidebar';
+import Providers from './providers'; // <-- NEW IMPORT
 
 const inter = Inter({
   variable: '--font-inter',
@@ -10,7 +11,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'LamiGo | Station Manager',
-  description: 'Last-Mile Delivery Optimization Platform - Station Manager Portal',
+  description: 'Last-Mile Delivery Optimization Platform',
 };
 
 export default function RootLayout({
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <LayoutWithOptionalSidebar>{children}</LayoutWithOptionalSidebar>
+        <Providers> {/* <-- WRAP THE APP IN PROVIDERS */}
+          <LayoutWithOptionalSidebar>{children}</LayoutWithOptionalSidebar>
+        </Providers>
       </body>
     </html>
   );

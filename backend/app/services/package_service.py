@@ -18,6 +18,15 @@ def _package_to_dict(package: Package) -> dict:
     pkg_dict = package.__dict__.copy()
     pkg_dict.pop("_sa_instance_state", None)
     
+    # --- 🩹 AUTO-HEAL CORRUPTED LEGACY DB ROWS ---
+    if pkg_dict.get("status") is None:
+        pkg_dict["status"] = PackageStatus.TO_BE_DELIVERED
+    if pkg_dict.get("is_cod") is None:
+        pkg_dict["is_cod"] = False
+    if pkg_dict.get("cod_amount") is None:
+        pkg_dict["cod_amount"] = 0.00
+    # ---------------------------------------------
+    
     # Safely extract the nested relationship if it was loaded
     if hasattr(package, "recipient") and package.recipient:
         rec_dict = package.recipient.__dict__.copy()

@@ -16,7 +16,7 @@ export async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -29,9 +29,9 @@ export async function fetchApi<T>(
     }
   }
 
-  const response = await fetch(url, { 
-    ...options, 
-    headers: { ...headers, ...options.headers } 
+  const response = await fetch(url, {
+    ...options,
+    headers: { ...headers, ...options.headers }
   });
 
   if (!response.ok) {
@@ -46,12 +46,18 @@ export async function fetchApi<T>(
  * LamiGo API Client
  */
 export const apiClient = {
-  getPackages: (): Promise<any[]> => fetchApi<any[]>('/packages/'),
+  getPackages: (): Promise<Package[]> => fetchApi<Package[]>('/packages/'),
+  createPackage: (data: any): Promise<Package> => fetchApi<Package>('/packages/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
   getDrivers: (): Promise<any[]> => fetchApi<any[]>('/drivers/'),
   getTrips: (): Promise<any[]> => fetchApi<any[]>('/trips/'),
   getSettlements: (): Promise<any[]> => fetchApi<any[]>('/settlements/'),
   getIncidents: (): Promise<any[]> => fetchApi<any[]>('/incidents/'),
 };
+
+
 
 /**
  * Calls the backend logout endpoint and clears the locally stored token.
@@ -93,5 +99,8 @@ export async function checkApiHealth(): Promise<boolean> {
     return false;
   }
 }
+
+
+
 
 export default apiClient;
