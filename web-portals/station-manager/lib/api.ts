@@ -3,7 +3,7 @@
  * Handles all communication with the FastAPI backend
  */
 
-import type { Package, Driver, Station, OptimizationResult } from '@/types';
+import type { Package, Station, OptimizationResult, DriverResponse, DriverCreate } from '@/types';
 
 // Base URL for the LamiGo API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -16,7 +16,7 @@ export async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -29,9 +29,9 @@ export async function fetchApi<T>(
     }
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: { ...headers, ...options.headers }
+  const response = await fetch(url, { 
+    ...options, 
+    headers: { ...headers, ...options.headers } 
   });
 
   if (!response.ok) {
@@ -46,18 +46,25 @@ export async function fetchApi<T>(
  * LamiGo API Client
  */
 export const apiClient = {
+  // Packages
   getPackages: (): Promise<Package[]> => fetchApi<Package[]>('/packages/'),
   createPackage: (data: any): Promise<Package> => fetchApi<Package>('/packages/', {
     method: 'POST',
     body: JSON.stringify(data)
   }),
-  getDrivers: (): Promise<any[]> => fetchApi<any[]>('/drivers/'),
+  
+  // Drivers (Now using our strict Pydantic-mapped types!)
+  getDrivers: (): Promise<DriverResponse[]> => fetchApi<DriverResponse[]>('/users/?role=DRIVER'),
+  createDriver: (data: DriverCreate): Promise<DriverResponse> => fetchApi<DriverResponse>('/users/drivers', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
+  // Placeholders for future features
   getTrips: (): Promise<any[]> => fetchApi<any[]>('/trips/'),
   getSettlements: (): Promise<any[]> => fetchApi<any[]>('/settlements/'),
   getIncidents: (): Promise<any[]> => fetchApi<any[]>('/incidents/'),
 };
-
-
 
 /**
  * Calls the backend logout endpoint and clears the locally stored token.
@@ -99,8 +106,5 @@ export async function checkApiHealth(): Promise<boolean> {
     return false;
   }
 }
-
-
-
 
 export default apiClient;

@@ -46,24 +46,31 @@ export interface Package {
 }
 
 // ============================================
-// Driver Types (mirrors schemas/driver.py)
+// Driver Types (mirrors schemas/user_schemas.py)
 // ============================================
 
-export type VehicleType = 'Bike' | 'Van' | 'Truck';
+export type VehicleType = 'MOTORCYCLE' | 'THREE_WHEEL' | 'LORRY';
+export type DriverStatus = 'OFF_DUTY' | 'AVAILABLE' | 'TRIP_SCHEDULED' | 'ON_TRIP' | 'ON_INCIDENT' | 'INCIDENT_RESPONSE';
 
-export interface DriverBase {
-  name: string;
+export interface DriverCreate {
+  role: 'DRIVER';
+  full_name: string;
   phone_number: string;
-  vehicle_type: string;
-  is_active: boolean;
+  nic_number: string;
+  vehicle_type: VehicleType;
+  vehicle_number: string;
+  license_number: string;
+  commission_rate?: number;
 }
 
-export interface DriverCreate extends DriverBase {}
-
-export interface Driver extends DriverBase {
-  id: number;
-  current_location_lat?: number;
-  current_location_long?: number;
+export interface DriverResponse {
+  uid: string;
+  full_name: string;
+  phone_number: string;
+  vehicle_type: VehicleType;
+  vehicle_number: string;
+  status: DriverStatus;
+  is_active: boolean;
 }
 
 // ============================================
@@ -117,3 +124,5 @@ export interface DashboardStats {
   active_drivers: number;
   total_drivers: number;
 }
+
+
