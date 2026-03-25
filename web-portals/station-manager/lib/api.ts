@@ -9,24 +9,34 @@ import type { Package, Driver, Station, OptimizationResult } from '@/types';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 /**
- * Generic fetch wrapper with error handling
+ * Generic fetch wrapper with Firebase Token Injection
  */
-async function fetchApi<T>(
+export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  const defaultOptions: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
   };
 
-  const response = await fetch(url, { ...defaultOptions, ...options });
+  // Securely inject the Firebase JWT token into the request
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('lamigo_station_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(url, { 
+    ...options, 
+    headers: { ...headers, ...options.headers } 
+  });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `API Error: ${response.status} ${response.statusText}`);
   }
 
   return response.json();
@@ -34,96 +44,17 @@ async function fetchApi<T>(
 
 /**
  * LamiGo API Client
- * Provides typed methods for all API endpoints
  */
 export const apiClient = {
-  // ============================================
-  // Package Endpoints
-  // ============================================
-
-  /**
-   * Get all packages
-   */
-  getPackages: (): Promise<Package[]> => {
-    return fetchApi<Package[]>('/packages/');
-  },
-
-  /**
-   * Get a specific package by ID
-   */
-  getPackage: (id: number): Promise<Package> => {
-    return fetchApi<Package>(`/packages/${id}`);
-  },
-
-  /**
-   * Get a package by tracking number
-   */
-  getPackageByTracking: (trackingNumber: string): Promise<Package> => {
-    return fetchApi<Package>(`/packages/tracking/${trackingNumber}`);
-  },
-
-  // ============================================
-  // Driver Endpoints
-  // ============================================
-
-  /**
-   * Get all drivers
-   */
-  getDrivers: (): Promise<Driver[]> => {
-    return fetchApi<Driver[]>('/drivers/');
-  },
-
-  /**
-   * Get only active drivers
-   */
-  getActiveDrivers: (): Promise<Driver[]> => {
-    return fetchApi<Driver[]>('/drivers/active');
-  },
-
-  /**
-   * Get a specific driver by ID
-   */
-  getDriver: (id: number): Promise<Driver> => {
-    return fetchApi<Driver>(`/drivers/${id}`);
-  },
-
-  // ============================================
-  // Station Endpoints (to be implemented)
-  // ============================================
-
-  /**
-   * Get all stations
-   */
-  getStations: (): Promise<Station[]> => {
-    return fetchApi<Station[]>('/stations/');
-  },
-
-  /**
-   * Get a specific station by ID
-   */
-  getStation: (id: number): Promise<Station> => {
-    return fetchApi<Station>(`/stations/${id}`);
-  },
-
-  // ============================================
-  // Optimization Endpoints (to be implemented)
-  // ============================================
-
-  /**
-   * Request route optimization for packages
-   */
-  optimizeRoute: (packageIds: number[]): Promise<OptimizationResult> => {
-    return fetchApi<OptimizationResult>('/optimization/route', {
-      method: 'POST',
-      body: JSON.stringify({ package_ids: packageIds }),
-    });
-  },
+  getPackages: (): Promise<any[]> => fetchApi<any[]>('/packages/'),
+  getDrivers: (): Promise<any[]> => fetchApi<any[]>('/drivers/'),
+  getTrips: (): Promise<any[]> => fetchApi<any[]>('/trips/'),
+  getSettlements: (): Promise<any[]> => fetchApi<any[]>('/settlements/'),
+  getIncidents: (): Promise<any[]> => fetchApi<any[]>('/incidents/'),
 };
 
 /**
  * Calls the backend logout endpoint and clears the locally stored token.
- * Pass an explicit token when you have one (e.g. straight after Firebase auth),
- * otherwise it falls back to the value stored in localStorage.
  */
 export async function logoutUser(token?: string): Promise<void> {
   const storedToken =
