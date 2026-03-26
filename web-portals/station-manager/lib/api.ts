@@ -3,7 +3,7 @@
  * Handles all communication with the FastAPI backend
  */
 
-import type { Package, Station, OptimizationResult, DriverResponse, DriverCreate } from '@/types';
+import type { Package, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate } from '@/types';
 
 // Base URL for the LamiGo API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -53,16 +53,22 @@ export const apiClient = {
     body: JSON.stringify(data)
   }),
   
-  // Drivers (Now using our strict Pydantic-mapped types!)
+  // Drivers
   getDrivers: (): Promise<DriverResponse[]> => fetchApi<DriverResponse[]>('/users/?role=DRIVER'),
   createDriver: (data: DriverCreate): Promise<DriverResponse> => fetchApi<DriverResponse>('/users/drivers', {
     method: 'POST',
     body: JSON.stringify(data)
   }),
 
+  // Settlements
+  getSettlements: (): Promise<SettlementResponse[]> => fetchApi<SettlementResponse[]>('/settlements/'),
+  createSettlement: (data: SettlementCreate): Promise<SettlementResponse> => fetchApi<SettlementResponse>('/settlements/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
   // Placeholders for future features
   getTrips: (): Promise<any[]> => fetchApi<any[]>('/trips/'),
-  getSettlements: (): Promise<any[]> => fetchApi<any[]>('/settlements/'),
   getIncidents: (): Promise<any[]> => fetchApi<any[]>('/incidents/'),
 };
 

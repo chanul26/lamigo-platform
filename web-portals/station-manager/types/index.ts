@@ -71,6 +71,7 @@ export interface DriverResponse {
   vehicle_number: string;
   status: DriverStatus;
   is_active: boolean;
+  wallet_balance: number;
 }
 
 // ============================================
@@ -123,6 +124,30 @@ export interface DashboardStats {
   delivered_packages: number;
   active_drivers: number;
   total_drivers: number;
+}
+
+// ============================================
+// Settlement Types (mirrors schemas/settlement_schemas.py)
+// ============================================
+
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHEQUE';
+
+export interface SettlementCreate {
+  driver_id: string;
+  amount_paid: number;
+  payment_method: PaymentMethod;
+  reference_note?: string;
+}
+
+export interface SettlementResponse {
+  settlement_id: string;
+  driver_id: string;
+  processed_by: string;
+  amount_paid: number;
+  balance_at_settlement: number;
+  payment_method: PaymentMethod;
+  reference_note?: string;
+  created_at: string;
 }
 
 
