@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # --- The Gatekeepers & Security ---
@@ -78,5 +78,30 @@ async def delete_branch(
     Requires SUPER_ADMIN privileges.
     """
     return await branch_service.delete_branch(db, branch_id)
+
+
+@router.get("/my-branch/info", response_model=BranchResponse)
+async def get_my_branch(
+    current_user: dict = Depends(RoleChecker([UserRole.STATION_MANAGER])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Station Managers can securely fetch their own branch details."""
+    branch_id = current_user.get("branch_id")
+    if not branch_id:
+        raise HTTPException(status_code=400, detail="No branch assigned to this manager.")
+    return await branch_service.get_branch(db, branch_id)
+
+
+@router.patch("/my-branch/info", response_model=BranchResponse)
+async def update_my_branch(
+    branch_in: BranchUpdate,
+    current_user: dict = Depends(RoleChecker([UserRole.STATION_MANAGER])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Station Managers can securely update their own branch settings (e.g., commission rate)."""
+    branch_id = current_user.get("branch_id")
+    if not branch_id:
+        raise HTTPException(status_code=400, detail="No branch assigned to this manager.")
+    return await branch_service.update_branch(db, branch_id, branch_in)
 
 

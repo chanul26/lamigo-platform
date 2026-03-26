@@ -150,4 +150,28 @@ export interface SettlementResponse {
   created_at: string;
 }
 
+// ============================================
+// Branch Types (mirrors schemas/branch_schemas.py)
+// ============================================
+
+export interface BranchUpdate {
+  name?: string;
+  address?: string;
+  gps_lat?: number;
+  gps_lng?: number;
+  default_commission_rate?: number;
+}
+
+export interface BranchResponse {
+  branch_id: string;
+  org_id: string;
+  name: string;
+  address: string;
+  gps_lat: number;
+  gps_lng: number;
+  default_commission_rate: number;
+  created_at: string;
+  updated_at: string;
+}
+
 
