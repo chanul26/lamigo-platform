@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field, EmailStr, AliasChoices
 from typing import Literal, Optional, List, Annotated, Union
 from datetime import datetime
 from uuid import UUID
-from typing import Annotated
+from decimal import Decimal
 
 # Import the enums you defined in your database
 from app.models.enums import UserRole, VehicleType, DriverStatus
@@ -129,6 +129,7 @@ class DriverResponse(BranchStaffBase):
     vehicle_type: VehicleType
     status: DriverStatus
     commission_rate: Optional[float] = None
+    wallet_balance: Decimal = Field(default=Decimal("0.00"))
     role: Literal[UserRole.DRIVER]
 
     model_config = ConfigDict(from_attributes=True)
