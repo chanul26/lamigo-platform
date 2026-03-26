@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wallet, Loader2, AlertCircle, X, CheckCircle2 } from 'lucide-react';
@@ -87,9 +88,17 @@ export default function SettlementsPage() {
           <h1 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Driver Settlements</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Manage and clear outstanding balances owed to delivery personnel.</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-400 mb-1">Total Station Liability</p>
-          <p className="text-2xl font-semibold text-red-400">LKR {totalOwedStation.toLocaleString()}</p>
+        <div className="text-right flex flex-col items-end gap-3">
+          <div>
+            <p className="text-sm text-gray-400 mb-1">Total Station Liability</p>
+            <p className="text-2xl font-semibold text-red-400">LKR {totalOwedStation.toLocaleString()}</p>
+          </div>
+          <Link 
+            href="/settlements/history" 
+            className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+          >
+            View Payment History &rarr;
+          </Link>
         </div>
       </div>
 
