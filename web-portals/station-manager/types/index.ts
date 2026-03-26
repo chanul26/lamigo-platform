@@ -174,4 +174,33 @@ export interface BranchResponse {
   updated_at: string;
 }
 
+// ============================================
+// Incident Types (mirrors schemas/incident_schemas.py)
+// ============================================
+
+export type IncidentType = 'VEHICLE_BREAKDOWN' | 'ACCIDENT' | 'TRAFFIC_POLICE' | 'MEDICAL_EMERGENCY' | 'OTHER';
+export type IncidentStatus = 'REPORTED' | 'INVESTIGATING' | 'RESOLVED';
+export type ResponseType = 'HELP' | 'PACKAGE_RESCUE' | 'MECHANICAL_AID' | 'OTHER';
+export type ResponseStatus = 'DISPATCHED' | 'ON_SITE' | 'COMPLETED' | 'CANCELLED';
+
+export interface IncidentResponse {
+  incident_id: string;
+  trip_id: string;
+  driver_id: string;
+  type: IncidentType;
+  reported_at_lat: number;
+  reported_at_lng: number;
+  description?: string;
+  status: IncidentStatus;
+  handled_by?: string;
+  handled_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncidentUpdate {
+  status: IncidentStatus;
+  description?: string;
+}
+
 

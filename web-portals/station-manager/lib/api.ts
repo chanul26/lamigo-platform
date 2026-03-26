@@ -3,7 +3,7 @@
  * Handles all communication with the FastAPI backend
  */
 
-import type { Package, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate } from '@/types';
+import type { Package, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate } from '@/types';
 
 // Base URL for the LamiGo API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -74,9 +74,15 @@ export const apiClient = {
     body: JSON.stringify(data)
   }),
 
+  // Incidents
+  getIncidents: (): Promise<IncidentResponse[]> => fetchApi<IncidentResponse[]>('/incidents/'),
+  updateIncident: (id: string, data: IncidentUpdate): Promise<IncidentResponse> => fetchApi<IncidentResponse>(`/incidents/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  }),
+
   // Placeholders for future features
   getTrips: (): Promise<any[]> => fetchApi<any[]>('/trips/'),
-  getIncidents: (): Promise<any[]> => fetchApi<any[]>('/incidents/'),
 };
 
 /**
