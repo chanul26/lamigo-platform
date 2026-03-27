@@ -6,11 +6,17 @@
  */
 
 // ============================================
-// Package Types (mirrors schemas/package.py)
+// Package Types (mirrors schemas/package_schemas.py)
 // ============================================
 
 export type PackageStatus = 'TO_BE_DELIVERED' | 'DRAFT' | 'SCHEDULED' | 'ON_TRIP' | 'DELIVERING_NOW' | 'COMPLETED' | 'FAILED';
 export type LocationType = 'HOME' | 'APARTMENT' | 'OFFICE' | 'WAREHOUSE' | 'RETAIL_STORE' | 'OTHER';
+
+export interface RecipientSummary {
+  recipient_id: string;
+  phone_number: string;
+  location_type?: LocationType;
+}
 
 export interface PackageCreate {
   weight: number;
@@ -29,7 +35,7 @@ export interface PackageCreate {
   gps_lng: number;
 }
 
-export interface Package {
+export interface PackageResponse {
   package_id: string;
   tracking_id: string;
   branch_id: string;
@@ -39,10 +45,14 @@ export interface Package {
   cod_amount: number;
   delivery_charge: number;
   sender_name: string;
+  sender_phone?: string;
   recipient_name: string;
-  recipient_phone?: string;
   address: string;
+  gps_lat: number;
+  gps_lng: number;
+  recipient?: RecipientSummary;
   created_at: string;
+  updated_at: string;
 }
 
 // ============================================
