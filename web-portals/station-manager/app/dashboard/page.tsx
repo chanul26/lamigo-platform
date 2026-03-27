@@ -1,162 +1,120 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Package, Wallet, Truck, MapPin, Plus, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Package, Route, Banknote, Plus, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
-
-const quickActions = [
-  { label: 'Create New Trip', icon: <Plus size={20} />, href: '/trips', primary: true },
-  { label: 'Add New Package', icon: <Plus size={20} />, href: '/packages', primary: false },
-  { label: 'Process Settlements', icon: <ArrowRight size={20} />, href: '/settlements', primary: false },
-];
+import type { PackageResponse, TripResponse, FinancialProfileResponse } from '@/types';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    pendingPackages: 0,
-    activeTrips: 0,
-    totalOwed: 0,
-    activeIncidents: 0
+  // Fetch all required data in parallel
+  const { data: packages = [], isLoading: loadingPkgs, isError: errorPkgs } = useQuery<PackageResponse[]>({
+    queryKey: ['packages'],
+    queryFn: apiClient.getPackages
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const { data: trips = [], isLoading: loadingTrips, isError: errorTrips } = useQuery<TripResponse[]>({
+    queryKey: ['trips'],
+    queryFn: apiClient.getTrips
+  });
 
-        // BULLETPROOF FIX: Catch individual 404s so one missing backend route doesn't crash the whole page
-        const [packages, trips, settlements, incidents] = await Promise.all([
-          apiClient.getPackages().catch((e) => { console.warn("Packages missing/failed:", e); return []; }),
-          apiClient.getTrips().catch((e) => { console.warn("Trips missing/failed:", e); return []; }),
-          apiClient.getSettlements().catch((e) => { console.warn("Settlements missing/failed:", e); return []; }),
-          apiClient.getIncidents().catch((e) => { console.warn("Incidents missing/failed:", e); return []; })
-        ]);
+  const { data: financials = [], isLoading: loadingFins, isError: errorFins } = useQuery<FinancialProfileResponse[]>({
+    queryKey: ['financial-profiles'],
+    queryFn: apiClient.getFinancialProfiles
+  });
 
-        const pendingPkgs = packages.filter((p: any) => p.status === 'TO_BE_DELIVERED').length;
-        const activeTrps = trips.filter((t: any) => t.status === 'IN_PROGRESS').length;
-        const totalDue = settlements.reduce((sum: number, s: any) => sum + (Number(s.amount_paid) || 0), 0); 
-        const openIncidents = incidents.filter((i: any) => i.status === 'REPORTED').length;
+  const isLoading = loadingPkgs || loadingTrips || loadingFins;
+  const isError = errorPkgs || errorTrips || errorFins;
 
-        setStats({
-          pendingPackages: pendingPkgs,
-          activeTrips: activeTrps,
-          totalOwed: totalDue,
-          activeIncidents: openIncidents
-        });
+  // Calculate Dashboard Metrics
+  const pendingDeliveriesCount = packages.filter(p => p.status === 'TO_BE_DELIVERED').length;
+  const activeTripsCount = trips.filter(t => t.status === 'IN_PROGRESS').length;
+  const pendingSettlementsTotal = financials.reduce((sum, profile) => sum + Number(profile.current_payable_balance), 0);
 
-      } catch (err: any) {
-        setError(err.message || 'Failed to connect to backend API.');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadDashboardData();
-  }, []);
-
-  const statCards = [
-    {
-      title: 'Pending Deliveries',
-      value: stats.pendingPackages,
-      icon: <Package size={24} />,
-      color: 'var(--status-pending)',
-      description: 'Packages awaiting dispatch',
-    },
-    {
-      title: 'Active Trips',
-      value: stats.activeTrips,
-      icon: <Truck size={24} />,
-      color: 'var(--status-in-transit)',
-      description: 'Routes currently on the road',
-    },
-    {
-      title: 'Total Settlements Paid',
-      value: `LKR ${stats.totalOwed.toLocaleString()}`,
-      icon: <Wallet size={24} />,
-      color: 'var(--status-delivered)',
-      description: 'Total cleared to drivers',
-    },
-    {
-      title: 'Active Incidents',
-      value: stats.activeIncidents,
-      icon: <AlertCircle size={24} />,
-      color: 'var(--status-failed)',
-      description: 'Emergencies requiring rescue',
-    },
-  ];
+  if (isLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-blue-500 w-10 h-10" /></div>;
+  if (isError) return <div className="p-8 text-red-500 flex items-center gap-2"><AlertCircle /> Failed to load dashboard metrics.</div>;
 
   return (
-    <div className="p-8 animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-          Welcome to LamiGo Logistics
-        </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Manage your deliveries, drivers, and settlements from one place.
-        </p>
+    <div className="p-8 animate-fade-in max-w-7xl">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-white mb-2">Welcome to LamiGo Logistics</h1>
+        <p className="text-gray-400">Here is the real-time operational overview for your branch.</p>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg flex items-center gap-3 text-red-400">
-          <AlertCircle size={20} />
-          <p className="text-sm font-medium">{error}</p>
-        </div>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((stat, index) => (
-          <div
-            key={index}
-            className="p-6 rounded-[var(--border-radius)] transition-all duration-200 hover:scale-[1.02]"
-            style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)' }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div
-                className="p-3 rounded-[var(--border-radius-sm)]"
-                style={{ backgroundColor: `${stat.color}20`, color: stat.color }}
-              >
-                {stat.icon}
-              </div>
-            </div>
-            <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{stat.title}</p>
-            <div className="flex items-center gap-2 mb-1">
-              {isLoading ? (
-                <Loader2 size={24} className="animate-spin text-gray-500" />
-              ) : (
-                <span className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {stat.value}
-                </span>
-              )}
-            </div>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{stat.description}</p>
+      {/* METRICS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {/* Metric 1 */}
+        <div className="bg-[#1E1E1E] border border-[#2E2E2E] rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-5">
+            <Package size={100} />
           </div>
-        ))}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-900/30 rounded-lg"><Package size={20} className="text-blue-400" /></div>
+              <h2 className="text-gray-400 font-medium">Pending Deliveries</h2>
+            </div>
+            <p className="text-4xl font-bold text-white">{pendingDeliveriesCount}</p>
+          </div>
+        </div>
+
+        {/* Metric 2 */}
+        <div className="bg-[#1E1E1E] border border-[#2E2E2E] rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-5">
+            <Route size={100} />
+          </div>
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-900/30 rounded-lg"><Route size={20} className="text-green-400" /></div>
+              <h2 className="text-gray-400 font-medium">Active Trips</h2>
+            </div>
+            <p className="text-4xl font-bold text-white">{activeTripsCount}</p>
+          </div>
+        </div>
+
+        {/* Metric 3 */}
+        <div className="bg-[#1E1E1E] border border-[#2E2E2E] rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-5">
+            <Banknote size={100} />
+          </div>
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-yellow-900/30 rounded-lg"><Banknote size={20} className="text-yellow-400" /></div>
+              <h2 className="text-gray-400 font-medium">Pending Settlements</h2>
+            </div>
+            <p className="text-4xl font-bold text-white">LKR {pendingSettlementsTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Quick Actions</h2>
-        <div className="flex flex-wrap gap-4">
-          {quickActions.map((action, index) => (
-            <Link
-              key={index}
-              href={action.href}
-              className="flex items-center gap-2 px-6 py-3 rounded-[var(--border-radius)] font-medium text-sm transition-all duration-200"
-              style={{
-                backgroundColor: action.primary ? 'var(--primary-blue)' : 'var(--card-bg)',
-                color: action.primary ? 'white' : 'var(--text-primary)',
-                border: action.primary ? 'none' : '1px solid var(--border-color)',
-              }}
-            >
-              {action.icon}
-              {action.label}
-            </Link>
-          ))}
-        </div>
+      {/* QUICK ACTIONS */}
+      <h2 className="text-xl font-bold text-white mb-6">Quick Actions</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link href="/trips/new" className="group bg-[#1A1A1A] border border-[#2E2E2E] hover:border-blue-500/50 rounded-xl p-6 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-blue-600 rounded-full text-white"><Plus size={20} /></div>
+            <ArrowRight size={20} className="text-gray-600 group-hover:text-blue-400 transition-colors" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-1">Create New Trip</h3>
+          <p className="text-sm text-gray-500">Batch pending packages and assign a driver.</p>
+        </Link>
+
+        <Link href="/packages/new" className="group bg-[#1A1A1A] border border-[#2E2E2E] hover:border-green-500/50 rounded-xl p-6 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-green-600 rounded-full text-white"><Package size={20} /></div>
+            <ArrowRight size={20} className="text-gray-600 group-hover:text-green-400 transition-colors" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-1">Add New Package</h3>
+          <p className="text-sm text-gray-500">Manually insert a new package into inventory.</p>
+        </Link>
+
+        <Link href="/settlements" className="group bg-[#1A1A1A] border border-[#2E2E2E] hover:border-yellow-500/50 rounded-xl p-6 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-yellow-600 rounded-full text-white"><Banknote size={20} /></div>
+            <ArrowRight size={20} className="text-gray-600 group-hover:text-yellow-400 transition-colors" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-1">Process Settlements</h3>
+          <p className="text-sm text-gray-500">Clear outstanding balances with your drivers.</p>
+        </Link>
       </div>
     </div>
   );
