@@ -231,4 +231,52 @@ export interface SMSCreate {
   status: string;
 }
 
+// ============================================
+// Trips & Tasks Types (mirrors schemas)
+// ============================================
+
+export type TripStatus = 'DRAFT' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type TaskStatus = 'DRAFT' | 'SCHEDULED' | 'ON_TRIP' | 'DELIVERING_NOW' | 'COMPLETED' | 'FAILED';
+
+export interface TripCreate {
+  branch_id: string;
+  driver_id?: string | null;
+  scheduled_start_time?: string | null;
+}
+
+export interface TripResponse {
+  trip_id: string;
+  branch_id: string;
+  driver_id?: string | null;
+  status: TripStatus;
+  total_tasks_count: number;
+  delivered_count: number;
+  total_weight: number;
+  total_cod_to_collect: number;
+  scheduled_start_time?: string | null;
+  actual_start_time?: string | null;
+  estimated_return_time_scheduled?: string | null;
+  estimated_return_time_actual?: string | null;
+  actual_return_time?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskCreate {
+  sequence_number: number;
+  trip_id: string;
+  package_id: string;
+  estimated_start_time?: string | null;
+  estimated_arrival_time?: string | null;
+}
+
+export interface TaskResponse {
+  task_id: string;
+  trip_id: string;
+  package_id: string;
+  status: TaskStatus;
+  sequence_number: number;
+  created_at: string;
+  updated_at: string;
+}
 
