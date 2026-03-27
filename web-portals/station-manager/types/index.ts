@@ -76,6 +76,7 @@ export interface DriverCreate {
 export interface DriverResponse {
   uid: string;
   full_name: string;
+  nic_number: string;
   phone_number: string;
   vehicle_type: VehicleType;
   vehicle_number: string;
