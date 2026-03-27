@@ -280,3 +280,15 @@ export interface TaskResponse {
   updated_at: string;
 }
 
+// ============================================
+// Financial Profile Types
+// ============================================
+export interface FinancialProfileResponse {
+  driver_id: string;
+  current_payable_balance: number;
+  total_lifetime_earnings: number;
+  total_lifetime_settled: number;
+  last_settlement_date?: string | null;
+  updated_at: string;
+}
+

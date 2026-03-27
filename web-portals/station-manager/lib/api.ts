@@ -3,7 +3,7 @@
  * Handles all communication with the FastAPI backend
  */
 
-import type { PackageResponse, PackageCreate, PackageUpdate, SMSCreate, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate, TripResponse, TripCreate, TaskCreate, TaskResponse } from '@/types';
+import type { PackageResponse, PackageCreate, PackageUpdate, SMSCreate, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate, TripResponse, TripCreate, TaskCreate, TaskResponse, FinancialProfileResponse } from '@/types';
 
 // Base URL for the LamiGo API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -106,6 +106,9 @@ export const apiClient = {
     method: 'POST',
     body: JSON.stringify(data)
   }),
+
+  // Financial Profiles
+  getFinancialProfiles: (): Promise<FinancialProfileResponse[]> => fetchApi<FinancialProfileResponse[]>('/financial-profiles/'),
 };
 
 /**
