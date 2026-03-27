@@ -94,12 +94,14 @@ export const apiClient = {
 
   // Trips & Routing
   getTrips: (): Promise<TripResponse[]> => fetchApi<TripResponse[]>('/trips/'),
+  getTrip: (id: string): Promise<TripResponse> => fetchApi<TripResponse>(`/trips/${id}`),
   createTrip: (data: TripCreate): Promise<TripResponse> => fetchApi<TripResponse>('/trips/', {
     method: 'POST',
     body: JSON.stringify(data)
   }),
 
   // Delivery Tasks
+  getTasks: (tripId: string): Promise<TaskResponse[]> => fetchApi<TaskResponse[]>(`/tasks/?trip_id=${tripId}`),
   createTask: (data: TaskCreate): Promise<TaskResponse> => fetchApi<TaskResponse>('/tasks/', {
     method: 'POST',
     body: JSON.stringify(data)
