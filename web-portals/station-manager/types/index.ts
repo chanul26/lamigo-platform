@@ -213,4 +213,22 @@ export interface IncidentUpdate {
   description?: string;
 }
 
+// ============================================
+// Package Update & Communication Types
+// ============================================
+
+export interface PackageUpdate {
+  status?: PackageStatus;
+  package_photo_url?: string;
+  num_of_attempts?: number;
+}
+
+export interface SMSCreate {
+  package_id: string;
+  recipient_phone: string;
+  message_body: string;
+  category: string;
+  status: string;
+}
+
 

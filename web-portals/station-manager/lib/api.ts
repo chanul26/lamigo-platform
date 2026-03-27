@@ -3,7 +3,7 @@
  * Handles all communication with the FastAPI backend
  */
 
-import type { Package, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate } from '@/types';
+import type { PackageResponse, PackageCreate, PackageUpdate, SMSCreate, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate } from '@/types';
 
 // Base URL for the LamiGo API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -47,8 +47,19 @@ export async function fetchApi<T>(
  */
 export const apiClient = {
   // Packages
-  getPackages: (): Promise<Package[]> => fetchApi<Package[]>('/packages/'),
-  createPackage: (data: any): Promise<Package> => fetchApi<Package>('/packages/', {
+  getPackages: (): Promise<PackageResponse[]> => fetchApi<PackageResponse[]>('/packages/'),
+  getPackage: (id: string): Promise<PackageResponse> => fetchApi<PackageResponse>(`/packages/${id}`),
+  createPackage: (data: PackageCreate): Promise<PackageResponse> => fetchApi<PackageResponse>('/packages/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  updatePackage: (id: string, data: PackageUpdate): Promise<PackageResponse> => fetchApi<PackageResponse>(`/packages/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  }),
+
+  // Communication
+  sendSmsLog: (data: SMSCreate): Promise<{message: string}> => fetchApi<{message: string}>('/communication/sms', {
     method: 'POST',
     body: JSON.stringify(data)
   }),
