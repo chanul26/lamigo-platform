@@ -3,7 +3,7 @@
  * Handles all communication with the FastAPI backend
  */
 
-import type { PackageResponse, PackageCreate, PackageUpdate, SMSCreate, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate } from '@/types';
+import type { PackageResponse, PackageCreate, PackageUpdate, SMSCreate, Station, OptimizationResult, DriverResponse, DriverCreate, SettlementResponse, SettlementCreate, BranchResponse, BranchUpdate, IncidentResponse, IncidentUpdate, TripResponse, TripCreate, TaskCreate, TaskResponse } from '@/types';
 
 // Base URL for the LamiGo API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -92,8 +92,18 @@ export const apiClient = {
     body: JSON.stringify(data)
   }),
 
-  // Placeholders for future features
-  getTrips: (): Promise<any[]> => fetchApi<any[]>('/trips/'),
+  // Trips & Routing
+  getTrips: (): Promise<TripResponse[]> => fetchApi<TripResponse[]>('/trips/'),
+  createTrip: (data: TripCreate): Promise<TripResponse> => fetchApi<TripResponse>('/trips/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
+  // Delivery Tasks
+  createTask: (data: TaskCreate): Promise<TaskResponse> => fetchApi<TaskResponse>('/tasks/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
 };
 
 /**
