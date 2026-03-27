@@ -6,12 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 # Imported the Driver model and all our schemas
-from app.models.sql_models import User, Branch, Driver
+from app.models.sql_models import User, Branch, Driver, DriverFinancialProfile
 from app.models.enums import UserRole, DriverStatus
 from app.schemas.user_schemas import UserCreate, UserUpdate, DriverCreate, DriverUpdate
 
 
-def _merge_user_driver(user: User, driver: Driver = None) -> dict:
+def _merge_user_driver(user: User, driver: Driver = None, financials: DriverFinancialProfile = None) -> dict:
     """Helper to merge SQLAlchemy models into a flat dictionary for Pydantic."""
     data = user.__dict__.copy()
     if driver:
@@ -19,6 +19,10 @@ def _merge_user_driver(user: User, driver: Driver = None) -> dict:
         # Remove SQLAlchemy internal state keys before merging
         driver_data.pop('_sa_instance_state', None)
         data.update(driver_data)
+        
+    # INJECT THE WALLET BALANCE
+    data['wallet_balance'] = financials.current_payable_balance if financials else 0.00
+    
     return data
 
 
@@ -202,10 +206,15 @@ async def get_user_by_nic(db: AsyncSession, nic_number: str) -> dict:
 
 
 async def get_users_by_branch(db: AsyncSession, branch_id: UUID, role: UserRole = None) -> list[dict]:
-    """Fetches staff, joining the driver table to get full operational profiles."""
+    """Fetches staff, joining the driver and financial tables."""
     
-    # We outerjoin the Driver table so we get Manager data AND Driver data
-    query = select(User, Driver).outerjoin(Driver, User.user_id == Driver.driver_id).where(User.branch_id == branch_id)
+    # Outerjoin BOTH the Driver and the DriverFinancialProfile tables
+    query = (
+        select(User, Driver, DriverFinancialProfile)
+        .outerjoin(Driver, User.user_id == Driver.driver_id)
+        .outerjoin(DriverFinancialProfile, User.user_id == DriverFinancialProfile.driver_id)
+        .where(User.branch_id == branch_id)
+    )
     
     if role:
         query = query.where(User.role == role)
@@ -213,8 +222,8 @@ async def get_users_by_branch(db: AsyncSession, branch_id: UUID, role: UserRole 
     result = await db.execute(query)
     rows = result.all()
     
-    # Merge the joined data into flat dictionaries for the frontend
-    return [_merge_user_driver(user, driver) for user, driver in rows]
+    # Pass all 3 objects to the merge helper
+    return [_merge_user_driver(user, driver, financials) for user, driver, financials in rows]
 
 
 async def update_user(db: AsyncSession, user_id: str, user_in: UserUpdate) -> dict:

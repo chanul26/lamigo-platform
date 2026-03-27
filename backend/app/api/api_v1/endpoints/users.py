@@ -72,16 +72,20 @@ async def create_driver(
 
 @router.get("/", response_model=List[CurrentUserResponse])
 async def get_users(
-    branch_id: UUID,
+    # 1. FIX: Make branch_id optional so the frontend doesn't have to send it
+    branch_id: Optional[UUID] = None,
     role: Optional[UserRole] = None,
     db: AsyncSession = Depends(deps.get_db),
-    _ = Depends(deps.RoleChecker([UserRole.SUPER_ADMIN, UserRole.STATION_MANAGER]))
+    # 2. FIX: Extract the current_user dictionary to get the secure token data
+    current_user: dict = Depends(deps.RoleChecker([UserRole.SUPER_ADMIN, UserRole.STATION_MANAGER]))
 ):
     """
     Fetch staff for a specific branch. 
-    Uses the polymorphic 'CurrentUserResponse' so Swagger dynamically shows 
-    either Manager or Driver data depending on who it finds.
     """
+    # 3. FIX: Securely override the branch_id using the Manager's own token
+    if current_user.get("role") == UserRole.STATION_MANAGER:
+        branch_id = current_user.get("branch_id")
+        
     return await user_service.get_users_by_branch(db, branch_id, role)
 
 
