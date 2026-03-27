@@ -61,7 +61,7 @@ export default function PackagesPage() {
             {!isLoading && !isError && packages.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-gray-500">No packages found in inventory.</td></tr>}
 
             {packages.map((pkg) => (
-              <tr key={pkg.package_id} style={{ borderBottom: '1px solid var(--border-color)' }} className="hover:bg-[#252525] transition-colors cursor-pointer">
+              <tr key={pkg.package_id} style={{ borderBottom: '1px solid var(--border-color)' }} className="hover:bg-[#252525] transition-colors cursor-pointer" onClick={() => window.location.href = `/packages/${pkg.package_id}`}>
                 <td className="p-4 font-mono font-medium text-white">{pkg.tracking_id}</td>
                 <td className="p-4">
                   <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${getStatusColor(pkg.status)}`}>
