@@ -13,6 +13,7 @@
 .Trashes
 Thumbs.db
 ehthumbs.db
+.vscode/
 
 # JetBrains IDEs (IntelliJ, Android Studio, PyCharm)
 .idea/
@@ -26,6 +27,9 @@ ehthumbs.db
 # Cursor AI
 .cursorignore
 .cursorindexingignore
+
+# Google Project IDX / Antigravity
+.agents/
 
 # ============================================
 # Environment Variables (NEVER COMMIT)
@@ -184,3 +188,8 @@ temp/
 # ============================================
 docs/_build/
 site/
+
+# ============================================
+# backend/config/ - Configuration files (if any, otherwise ignore this section)
+# ============================================
+config/*.json

@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lamigo-backend
+    restart: always
+    ports:
+      - "8000:8000"
+      
+    # --- Environment Variables Injection ---
+    env_file:
+      - .env  
+      
+    environment:
+      # --- Docker Network Override ---
+      - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@host.docker.internal:${DB_PORT}/${DB_NAME}
+      
+      # --- Docker Path Override ---
+      # Inside the container, the 'backend' folder IS the root directory (/app).
+      # We override the .env path so Docker looks in the right place.
+      - FIREBASE_CREDENTIALS_PATH=credentials/firebase-adminsdk.json
+      
+    volumes:
+      # --- Live Reload Mount ---
+      - ./backend:/app
+      - /app/env
+      - /app/.venv

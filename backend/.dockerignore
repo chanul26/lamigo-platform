@@ -1,0 +1,35 @@
+# 1. Secrets & Credentials (CRITICAL SECURITY)
+# Never let your database passwords or Firebase keys get baked into the image.
+.env
+.env.*
+*.pem
+credentials/
+
+# 2. Virtual Environments
+# Prevents Docker from copying your Mac's Python binaries into the Linux container.
+.venv/
+venv/
+env/
+ENV/
+
+# 3. Python Cache & Test Data
+# Keeps the image size tiny.
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 4. Git & OS Junk
+# These do nothing inside a container.
+.git/
+.gitignore
+.DS_Store
+
+# 5. IDE Workspaces
+# Docker doesn't need your VS Code settings.
+.vscode/
+.idea/
