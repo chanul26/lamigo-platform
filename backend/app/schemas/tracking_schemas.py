@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import LocationType, PackageStatus
+from app.models.enums import LocationType, PackageStatus, PreferenceStatus
 
 # --- Driver DynamoDB ingest (existing) ---
 class LocationUpdate(BaseModel):
@@ -78,3 +78,33 @@ class PublicRecipientLocationUpdate(BaseModel):
 class PublicRecipientLocationResponse(BaseModel):
     message: str
     recipient: PublicRecipientOut
+
+
+class PublicInstructionCreate(BaseModel):
+    """Customer-added note for the active delivery stop."""
+
+    content_text: str = Field(..., min_length=1, description="Instruction text for the driver")
+
+
+class PublicInstructionResponse(BaseModel):
+    message: str
+    instruction_id: UUID
+    task_id: UUID
+
+
+class PublicPreferenceCreate(BaseModel):
+    """Reschedule / not-available day for this package."""
+
+    target_date: date = Field(..., description="Calendar day (YYYY-MM-DD)")
+    status: Literal["UNAVAILABLE"] = Field(
+        default="UNAVAILABLE",
+        description="Must be UNAVAILABLE for customer reschedule flow",
+    )
+
+
+class PublicPreferenceResponse(BaseModel):
+    message: str
+    preference_id: UUID
+    package_id: UUID
+    target_date: date
+    status: PreferenceStatus

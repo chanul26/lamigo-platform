@@ -3,17 +3,33 @@ Public (unauthenticated) tracking lookups for the customer portal.
 """
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.enums import PackageStatus, TaskStatus
-from app.models.sql_models import DeliveryTask, Package, Recipient
+from app.models.enums import (
+    InstructionCreator,
+    InstructionType,
+    PackageStatus,
+    PreferenceStatus,
+    TaskStatus,
+)
+from app.models.sql_models import (
+    DeliveryPreference,
+    DeliveryTask,
+    Package,
+    Recipient,
+    TaskInstruction,
+)
 from app.schemas.tracking_schemas import (
     PublicCurrentTaskOut,
+    PublicInstructionResponse,
+    PublicPreferenceResponse,
     PublicRecipientOut,
     PublicTrackingDetailResponse,
 )
@@ -145,3 +161,112 @@ async def update_recipient_location_by_tracking_id(
         gps_lng=recipient.gps_lng,
     )
     return out, ""
+
+
+async def _get_package_by_tracking_id(
+    db: AsyncSession, tracking_id: str
+) -> Optional[Package]:
+    result = await db.execute(select(Package).where(Package.tracking_id == tracking_id))
+    return result.scalar_one_or_none()
+
+
+async def _get_active_delivery_task_for_package(
+    db: AsyncSession, package_id: UUID
+) -> Optional[DeliveryTask]:
+    """
+    Current actionable stop: scheduled or in progress (not completed/failed/draft).
+    """
+    result = await db.execute(
+        select(DeliveryTask)
+        .where(
+            DeliveryTask.package_id == package_id,
+            DeliveryTask.status.in_(
+                [TaskStatus.SCHEDULED, TaskStatus.ON_TRIP, TaskStatus.DELIVERING_NOW]
+            ),
+        )
+        .order_by(DeliveryTask.sequence_number.asc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_recipient_instruction_for_tracking(
+    db: AsyncSession,
+    tracking_id: str,
+    content_text: str,
+) -> tuple[Optional[PublicInstructionResponse], str]:
+    """
+    Attach a TEXT instruction from the recipient to the package's active delivery task.
+
+    Returns (response, error_code): ("", "") on success;
+      not_found, no_active_task, empty_content
+    """
+    text = (content_text or "").strip()
+    if not text:
+        return None, "empty_content"
+
+    package = await _get_package_by_tracking_id(db, tracking_id)
+    if not package:
+        return None, "not_found"
+
+    task = await _get_active_delivery_task_for_package(db, package.package_id)
+    if not task:
+        return None, "no_active_task"
+
+    instruction = TaskInstruction(
+        task_id=task.task_id,
+        type=InstructionType.TEXT,
+        creator_role=InstructionCreator.RECIPIENT,
+        content_text=text,
+        media_url=None,
+        is_deleted=False,
+        deleted_at=None,
+    )
+    db.add(instruction)
+    await db.commit()
+    await db.refresh(instruction)
+
+    return (
+        PublicInstructionResponse(
+            message="Instruction added successfully.",
+            instruction_id=instruction.instruction_id,
+            task_id=task.task_id,
+        ),
+        "",
+    )
+
+
+async def create_delivery_preference_for_tracking(
+    db: AsyncSession,
+    tracking_id: str,
+    target_date: date,
+    preference_status: PreferenceStatus,
+) -> tuple[Optional[PublicPreferenceResponse], str]:
+    """
+    Create a delivery preference row for this package (e.g. UNAVAILABLE on a date).
+
+    Returns (response, error_code): not_found
+    """
+    package = await _get_package_by_tracking_id(db, tracking_id)
+    if not package:
+        return None, "not_found"
+
+    pref = DeliveryPreference(
+        package_id=package.package_id,
+        target_date=target_date,
+        status=preference_status,
+    )
+    db.add(pref)
+    await db.commit()
+    await db.refresh(pref)
+
+    return (
+        PublicPreferenceResponse(
+            message="Preference saved successfully.",
+            preference_id=pref.preference_id,
+            package_id=pref.package_id,
+            target_date=pref.target_date,
+            status=pref.status,
+        ),
+        "",
+    )

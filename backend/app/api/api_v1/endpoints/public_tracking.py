@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.models.enums import PreferenceStatus
 from app.schemas.tracking_schemas import (
+    PublicInstructionCreate,
+    PublicInstructionResponse,
+    PublicPreferenceCreate,
+    PublicPreferenceResponse,
     PublicRecipientLocationResponse,
     PublicRecipientLocationUpdate,
     PublicTrackingDetailResponse,
@@ -74,3 +79,67 @@ async def patch_public_recipient_location(
         message="Delivery location updated successfully.",
         recipient=updated,
     )
+
+
+@router.post(
+    "/tracking/{tracking_id}/instruction",
+    response_model=PublicInstructionResponse,
+    summary="Add a text instruction for the active delivery task (no auth)",
+)
+async def post_public_instruction(
+    tracking_id: str,
+    body: PublicInstructionCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Creates a TaskInstruction (TEXT, creator RECIPIENT) on the package's current
+    active DeliveryTask (scheduled or in progress).
+    """
+    resp, err = await public_tracking_service.create_recipient_instruction_for_tracking(
+        db,
+        tracking_id=tracking_id,
+        content_text=body.content_text,
+    )
+    if err == "not_found":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No package found for this tracking number.",
+        )
+    if err == "no_active_task":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There is no active delivery task for this package yet.",
+        )
+    if err == "empty_content":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Instruction text cannot be empty.",
+        )
+    return resp
+
+
+@router.post(
+    "/tracking/{tracking_id}/preference",
+    response_model=PublicPreferenceResponse,
+    summary="Set a delivery preference (e.g. not available on a date) (no auth)",
+)
+async def post_public_preference(
+    tracking_id: str,
+    body: PublicPreferenceCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Creates a DeliveryPreference for this package (e.g. UNAVAILABLE on target_date).
+    """
+    resp, err = await public_tracking_service.create_delivery_preference_for_tracking(
+        db,
+        tracking_id=tracking_id,
+        target_date=body.target_date,
+        preference_status=PreferenceStatus.UNAVAILABLE,
+    )
+    if err == "not_found":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No package found for this tracking number.",
+        )
+    return resp
