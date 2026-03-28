@@ -121,7 +121,7 @@ async def post_public_instruction(
 @router.post(
     "/tracking/{tracking_id}/preference",
     response_model=PublicPreferenceResponse,
-    summary="Set a delivery preference (e.g. not available on a date) (no auth)",
+    summary="Set delivery preferences (multiple dates) (no auth)",
 )
 async def post_public_preference(
     tracking_id: str,
@@ -129,13 +129,13 @@ async def post_public_preference(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Creates a DeliveryPreference for this package (e.g. UNAVAILABLE on target_date).
+    Creates DeliveryPreferences for this package (e.g. AVAILABLE on multiple dates).
     """
-    resp, err = await public_tracking_service.create_delivery_preference_for_tracking(
+    resp, err = await public_tracking_service.create_delivery_preferences_for_tracking(
         db,
         tracking_id=tracking_id,
-        target_date=body.target_date,
-        preference_status=PreferenceStatus.UNAVAILABLE,
+        target_dates=body.target_dates,
+        preference_status=body.status,
     )
     if err == "not_found":
         raise HTTPException(

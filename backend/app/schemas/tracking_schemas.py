@@ -93,18 +93,9 @@ class PublicInstructionResponse(BaseModel):
 
 
 class PublicPreferenceCreate(BaseModel):
-    """Reschedule / not-available day for this package."""
-
-    target_date: date = Field(..., description="Calendar day (YYYY-MM-DD)")
-    status: Literal["UNAVAILABLE"] = Field(
-        default="UNAVAILABLE",
-        description="Must be UNAVAILABLE for customer reschedule flow",
-    )
-
+    """Preferred days for this package."""
+    target_dates: list[date] = Field(..., description="List of calendar days (YYYY-MM-DD)")
+    status: PreferenceStatus = Field(default=PreferenceStatus.AVAILABLE)
 
 class PublicPreferenceResponse(BaseModel):
     message: str
-    preference_id: UUID
-    package_id: UUID
-    target_date: date
-    status: PreferenceStatus

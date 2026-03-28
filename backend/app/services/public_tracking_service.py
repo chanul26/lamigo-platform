@@ -236,37 +236,30 @@ async def create_recipient_instruction_for_tracking(
     )
 
 
-async def create_delivery_preference_for_tracking(
+async def create_delivery_preferences_for_tracking(
     db: AsyncSession,
     tracking_id: str,
-    target_date: date,
+    target_dates: list[date],
     preference_status: PreferenceStatus,
 ) -> tuple[Optional[PublicPreferenceResponse], str]:
     """
-    Create a delivery preference row for this package (e.g. UNAVAILABLE on a date).
-
-    Returns (response, error_code): not_found
+    Create multiple delivery preference rows for this package.
     """
     package = await _get_package_by_tracking_id(db, tracking_id)
     if not package:
         return None, "not_found"
 
-    pref = DeliveryPreference(
-        package_id=package.package_id,
-        target_date=target_date,
-        status=preference_status,
-    )
-    db.add(pref)
+    for target_date in target_dates:
+        pref = DeliveryPreference(
+            package_id=package.package_id,
+            target_date=target_date,
+            status=preference_status,
+        )
+        db.add(pref)
+        
     await db.commit()
-    await db.refresh(pref)
 
     return (
-        PublicPreferenceResponse(
-            message="Preference saved successfully.",
-            preference_id=pref.preference_id,
-            package_id=pref.package_id,
-            target_date=pref.target_date,
-            status=pref.status,
-        ),
-        "",
+        PublicPreferenceResponse(message="Preferred dates saved successfully."),
+        ""
     )
