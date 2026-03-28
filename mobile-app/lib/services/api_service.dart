@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -28,6 +29,7 @@ class ApiService {
   // Called once after Firebase Phone Auth succeeds
   // Returns user profile with role
   Future<Map<String, dynamic>?> loginWithFirebaseToken(String firebaseToken) async {
+    debugPrint('[API] loginWithFirebaseToken: calling $baseUrl/auth/login');
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -36,21 +38,26 @@ class ApiService {
           'Authorization': 'Bearer $firebaseToken',
         },
         body: jsonEncode({'fcm_token': ''}),
-      );
+      ).timeout(const Duration(seconds: 15));
+
+      debugPrint('[API] Response status: ${response.statusCode}');
+      debugPrint('[API] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        // Save token for future requests
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         await saveToken(firebaseToken);
-        debugPrint('Login successful: ${data['role']}');
+        debugPrint('[API] Login successful. role=${data['role']}, keys=${data.keys.toList()}');
         return data;
       } else {
-        debugPrint('Login failed: ${response.statusCode} ${response.body}');
+        debugPrint('[API] Login failed: ${response.statusCode} ${response.body}');
         return null;
       }
-    } catch (e) {
-      debugPrint('Login error: $e');
-      return null;
+    } on TimeoutException {
+      debugPrint('[API] Request timed out after 15s — backend unreachable at $baseUrl');
+      rethrow;
+    } catch (e, stack) {
+      debugPrint('[API] Login exception: $e\n$stack');
+      rethrow;
     }
   }
 
