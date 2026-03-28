@@ -59,6 +59,6 @@ export interface PublicInstructionCreate {
 }
 
 export interface PublicPreferenceCreate {
-  target_date: string; // Format: YYYY-MM-DD
-  status?: 'UNAVAILABLE';
+  target_dates: string[]; // Changed to an array of dates
+  status?: 'AVAILABLE' | 'UNAVAILABLE';
 }
