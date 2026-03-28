@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { MapPin, Box, CheckCircle2, AlertCircle, Loader2, X, UserCircle2, ThumbsUp } from 'lucide-react';
+import { MapPin, Box, CheckCircle2, AlertCircle, Loader2, X, UserCircle2, ThumbsUp, Navigation, Clock } from 'lucide-react';
 import { trackingClient } from '@/lib/api';
 import type { PublicTrackingDetailResponse } from '@/types';
 
@@ -26,7 +26,7 @@ export default function CustomerTrackingPage() {
   const [showDateModal, setShowDateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
 
-  // Calculate Date Limits (Tomorrow to +5 Days)
+  // Calculate Date Limits
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDateStr = tomorrow.toISOString().split('T')[0];
@@ -90,7 +90,6 @@ export default function CustomerTrackingPage() {
       setShowInstructionModal(false);
       setInstructionText('');
     } catch (err: any) {
-      // Gracefully handle the 400 error from the backend if it's not on a trip yet
       setInstructionError(err.message || "Cannot add instructions right now.");
     }
   };
@@ -101,83 +100,105 @@ export default function CustomerTrackingPage() {
       await trackingClient.setPreference(trackingId, { target_date: selectedDate, status: 'UNAVAILABLE' });
       alert(`Delivery rescheduled for after ${selectedDate}!`);
       setShowDateModal(false);
-      setIsConfirmed(true); // Treat a reschedule as a resolution
+      setIsConfirmed(true);
     } catch (err: any) {
       alert("Failed to update delivery preference.");
     }
+  };
+
+  const formatETA = (isoString?: string | null) => {
+    if (!isoString) return "Calculating...";
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   if (loading) return <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-blue-600"><Loader2 className="animate-spin w-10 h-10 mb-4" /></div>;
   if (error || !data) return <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center"><AlertCircle className="w-12 h-12 text-red-500 mb-4" /><h1 className="text-xl font-bold text-gray-800 mb-2">Tracking Not Found</h1></div>;
 
   const isVerified = data.recipient?.is_location_verified || pinSuccess;
+  const isOutForDelivery = data.status === 'ON_TRIP' || data.status === 'DELIVERING_NOW';
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans pb-10">
       <div className="max-w-md mx-auto bg-white min-h-screen shadow-lg relative">
         
-        {/* Header - Flow 1 */}
-        <div className="pt-12 pb-6 px-6 text-center flex flex-col items-center">
-           <UserCircle2 size={64} strokeWidth={1} className="text-gray-800 mb-3" />
-           <h1 className="text-xl font-bold text-gray-800">Hi, {data.recipient_name.split(' ')[0]}.</h1>
-           <p className="text-gray-600 font-medium mt-1">You have 1 shipment arriving soon</p>
+        {/* Dynamic Header */}
+        <div className={`pt-12 pb-6 px-6 text-center flex flex-col items-center ${isOutForDelivery ? 'bg-blue-600 text-white rounded-b-[40px] shadow-md' : ''}`}>
+           {!isOutForDelivery && <UserCircle2 size={64} strokeWidth={1} className="text-gray-800 mb-3" />}
+           <h1 className={`text-xl font-bold ${isOutForDelivery ? 'text-white' : 'text-gray-800'}`}>
+             {isOutForDelivery ? 'Out for Delivery' : `Hi, ${data.recipient_name.split(' ')[0]}.`}
+           </h1>
+           <p className={`font-medium mt-1 ${isOutForDelivery ? 'text-blue-100' : 'text-gray-600'}`}>
+             {isOutForDelivery ? `Order #${data.tracking_id.split('-')[1]}` : 'You have 1 shipment arriving soon'}
+           </p>
         </div>
 
-        <div className="px-5 space-y-4">
+        <div className={`px-5 space-y-4 ${isOutForDelivery ? '-mt-4 relative z-10' : ''}`}>
           
-          {/* Top Card (Peach Color from Figma) */}
-          <div className="bg-[#FFEFE5] rounded-2xl p-5 border border-[#FFD5B8]">
-             <div className="flex items-start gap-3 mb-4">
-               <div className="p-2.5 bg-blue-100/50 rounded-xl text-blue-600">
-                 <Box size={24} />
-               </div>
-               <div>
-                 <p className="text-gray-800 font-bold text-lg leading-tight">Order ID : {data.tracking_id.split('-')[1]}</p>
-                 <p className="text-sm text-gray-600 font-medium">
-                   Cash on Delivery Rs.{Number(data.cod_amount).toFixed(2)}
-                 </p>
-               </div>
-             </div>
+          {/* FLOW 2: LIVE TRACKING UI */}
+          {isOutForDelivery ? (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100">
+                <div className="h-full bg-blue-500 animate-pulse w-2/3 rounded-r-full"></div>
+              </div>
+              
+              <div className="flex items-center gap-4 mb-6 mt-2">
+                <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 shadow-inner">
+                  <Navigation size={28} className="animate-bounce" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Estimated Arrival</p>
+                  <p className="text-3xl font-black text-gray-800 tracking-tight">
+                    {formatETA(data.current_task?.estimated_arrival_time)}
+                  </p>
+                </div>
+              </div>
 
-             {isConfirmed ? (
-               <div className="bg-green-100 text-green-800 p-4 rounded-xl flex items-center gap-3 mb-2 font-bold border border-green-200">
-                 <ThumbsUp size={24} /> Thank you! We will deliver it soon.
-               </div>
-             ) : (
-               <>
-                 <p className="text-gray-800 font-bold leading-snug mb-5">
-                   Your order will be delivered to your location. Please confirm your availability.
-                 </p>
-
-                 <div className="flex gap-3 mb-3">
-                   <button 
-                     onClick={() => setIsConfirmed(true)}
-                     className="flex-1 bg-[#38A169] text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform text-sm"
-                   >
-                     Confirm to Receive
-                   </button>
-                   <button 
-                     onClick={() => setShowDateModal(true)}
-                     className="flex-1 bg-[#E53E3E] text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform text-sm"
-                   >
-                     Not Available
-                   </button>
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center gap-3">
+                <Clock className="text-blue-500" size={20} />
+                <div>
+                  <p className="text-sm font-bold text-blue-900">Driver is approaching</p>
+                  <p className="text-xs text-blue-700 font-medium">You are stop #{data.current_task?.sequence_number || 1} on the route.</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* FLOW 1: PRE-DELIVERY UI (Peach Card) */
+            <div className="bg-[#FFEFE5] rounded-2xl p-5 border border-[#FFD5B8]">
+               <div className="flex items-start gap-3 mb-4">
+                 <div className="p-2.5 bg-blue-100/50 rounded-xl text-blue-600">
+                   <Box size={24} />
                  </div>
-               </>
-             )}
+                 <div>
+                   <p className="text-gray-800 font-bold text-lg leading-tight">Order ID : {data.tracking_id.split('-')[1]}</p>
+                   <p className="text-sm text-gray-600 font-medium">
+                     Cash on Delivery Rs.{Number(data.cod_amount).toFixed(2)}
+                   </p>
+                 </div>
+               </div>
 
-             <button 
-               onClick={() => {
-                 setInstructionError(null);
-                 setShowInstructionModal(true);
-               }}
-               className="w-full bg-[#1A202C] text-white font-bold py-3.5 rounded-xl shadow-sm active:scale-95 transition-transform text-sm mt-2"
-             >
-               Add Instructions
-             </button>
-          </div>
+               {isConfirmed ? (
+                 <div className="bg-green-100 text-green-800 p-4 rounded-xl flex items-center gap-3 mb-2 font-bold border border-green-200">
+                   <ThumbsUp size={24} /> Thank you! We will deliver it soon.
+                 </div>
+               ) : (
+                 <>
+                   <p className="text-gray-800 font-bold leading-snug mb-5">
+                     Your order will be delivered to your location. Please confirm your availability.
+                   </p>
+                   <div className="flex gap-3 mb-3">
+                     <button onClick={() => setIsConfirmed(true)} className="flex-1 bg-[#38A169] text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform text-sm">
+                       Confirm to Receive
+                     </button>
+                     <button onClick={() => setShowDateModal(true)} className="flex-1 bg-[#E53E3E] text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform text-sm">
+                       Not Available
+                     </button>
+                   </div>
+                 </>
+               )}
+            </div>
+          )}
 
-          {/* Bottom Card (Location Pin) */}
+          {/* Location Pin Card (Visible in both flows) */}
           <div className="bg-[#FFEFE5] rounded-2xl p-6 border border-[#FFD5B8] text-center flex flex-col items-center">
              <div className="w-12 h-12 border-2 border-gray-800 rounded-full flex items-center justify-center mb-3 text-gray-800">
                <MapPin size={24} />
@@ -190,29 +211,28 @@ export default function CustomerTrackingPage() {
                  <CheckCircle2 size={18} /> Location Verified
                </div>
              ) : (
-               <button 
-                 onClick={handleDropPin}
-                 disabled={isPinning}
-                 className="w-2/3 bg-[#38A169] text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform text-sm flex justify-center items-center gap-2"
-               >
+               <button onClick={handleDropPin} disabled={isPinning} className="w-2/3 bg-[#38A169] text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform text-sm flex justify-center items-center gap-2">
                  {isPinning ? <Loader2 size={16} className="animate-spin"/> : null}
                  {isPinning ? 'Locating...' : 'Pin Your Location'}
                </button>
              )}
           </div>
 
-          {/* Bottom Footer Button */}
-          <div className="pt-4 pb-8">
-            <button 
-              onClick={() => setIsConfirmed(true)}
-              className={`w-full font-bold py-4 rounded-xl shadow-md text-lg active:scale-95 transition-all ${isConfirmed ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-[#38A169] text-white'}`}
-            >
-              {isConfirmed ? 'Order Confirmed' : 'Ready to Receive Order'}
-            </button>
+          {/* Action Buttons */}
+          <div className="pt-2 pb-8 space-y-3">
+             <button onClick={() => { setInstructionError(null); setShowInstructionModal(true); }} className="w-full bg-[#1A202C] text-white font-bold py-4 rounded-xl shadow-sm active:scale-95 transition-transform text-sm">
+               Add Instructions for Driver
+             </button>
+            {!isOutForDelivery && (
+              <button onClick={() => setIsConfirmed(true)} className={`w-full font-bold py-4 rounded-xl shadow-md text-lg active:scale-95 transition-all ${isConfirmed ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-[#38A169] text-white'}`}>
+                {isConfirmed ? 'Order Confirmed' : 'Ready to Receive Order'}
+              </button>
+            )}
           </div>
 
         </div>
 
+        {/* MODALS REMAIN THE SAME... */}
         {/* MODAL: Add Instruction */}
         {showInstructionModal && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -228,15 +248,8 @@ export default function CustomerTrackingPage() {
                     <p>{instructionError}</p>
                   </div>
                 )}
-                <textarea 
-                  value={instructionText}
-                  onChange={(e) => setInstructionText(e.target.value)}
-                  placeholder="Leave with the security guard at the main lobby desk..."
-                  className="w-full h-32 border border-gray-300 rounded-xl p-3 outline-none focus:border-blue-500 text-gray-700 resize-none"
-                />
-                <button onClick={submitInstruction} className="w-full mt-4 bg-[#1A202C] text-white font-bold py-3.5 rounded-xl text-sm">
-                  Save Instruction
-                </button>
+                <textarea value={instructionText} onChange={(e) => setInstructionText(e.target.value)} placeholder="Leave with the security guard at the main lobby desk..." className="w-full h-32 border border-gray-300 rounded-xl p-3 outline-none focus:border-blue-500 text-gray-700 resize-none" />
+                <button onClick={submitInstruction} className="w-full mt-4 bg-[#1A202C] text-white font-bold py-3.5 rounded-xl text-sm">Save Instruction</button>
               </div>
             </div>
           </div>
@@ -252,21 +265,8 @@ export default function CustomerTrackingPage() {
               </div>
               <div className="p-4">
                 <p className="text-sm text-gray-600 mb-4">Please select a date when you will be available to receive the package (Max 5 days ahead).</p>
-                <input 
-                  type="date" 
-                  min={minDateStr}
-                  max={maxDateStr}
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl p-3 outline-none focus:border-blue-500 text-gray-700"
-                />
-                <button 
-                  onClick={submitUnavailableDate} 
-                  disabled={!selectedDate}
-                  className="w-full mt-4 bg-[#E53E3E] disabled:bg-[#fc9b9b] text-white font-bold py-3.5 rounded-xl text-sm transition-colors"
-                >
-                  Confirm Reschedule
-                </button>
+                <input type="date" min={minDateStr} max={maxDateStr} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 outline-none focus:border-blue-500 text-gray-700" />
+                <button onClick={submitUnavailableDate} disabled={!selectedDate} className="w-full mt-4 bg-[#E53E3E] disabled:bg-[#fc9b9b] text-white font-bold py-3.5 rounded-xl text-sm transition-colors">Confirm Reschedule</button>
               </div>
             </div>
           </div>
