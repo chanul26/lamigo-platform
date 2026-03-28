@@ -6,8 +6,15 @@ import { Loader2, ArrowLeft, MapPin, Phone, MessageSquare, AlertTriangle, Edit, 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import dynamic from 'next/dynamic';
 import { apiClient } from '@/lib/api';
-import type { PackageUpdate, PackageStatus } from '@/types';
+import type { PackageUpdate } from '@/types';
+
+// Dynamically import the map to prevent Next.js SSR crashes
+const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full flex items-center justify-center bg-[#121212] text-gray-500"><Loader2 className="animate-spin" /></div>
+});
 
 export default function PackageDetailsPage() {
   const params = useParams();
@@ -42,10 +49,14 @@ export default function PackageDetailsPage() {
 
   const handleSendSMS = () => {
     if (!pkg) return;
+    
+    // THE FIX: Construct the URL and inject it into the SMS body
+    const trackingUrl = `http://localhost:3001/track/${pkg.tracking_id}`;
+    
     smsMutation.mutate({
       package_id: pkg.package_id,
       recipient_phone: pkg.recipient?.phone_number || '',
-      message_body: `LamiGo Delivery: Please click this link to verify your exact GPS location for package ${pkg.tracking_id}.`,
+      message_body: `LamiGo Delivery: Please click this link to verify your exact GPS location for package ${pkg.tracking_id}. Link: ${trackingUrl}`,
       category: 'PIN_VERIFICATION',
       status: 'SENT'
     });
@@ -59,7 +70,6 @@ export default function PackageDetailsPage() {
   };
 
   const onSubmitUpdate = (data: PackageUpdate) => {
-    // Only send the fields that the manager actually typed in
     const payload: PackageUpdate = { status: data.status };
     if (data.num_of_attempts) payload.num_of_attempts = Number(data.num_of_attempts);
     if (data.package_photo_url) payload.package_photo_url = data.package_photo_url;
@@ -91,21 +101,23 @@ export default function PackageDetailsPage() {
         {/* LEFT COLUMN: Map & SMS Action */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-[#1E1E1E] border border-[#2E2E2E] rounded-xl overflow-hidden shadow-sm">
-            <div className="w-full h-[350px] bg-[#121212] relative">
-              <iframe 
-                width="100%" 
-                height="100%" 
-                frameBorder="0" 
-                style={{ border: 0 }}
-                src={`http://googleusercontent.com/maps.google.com/maps?q=${pkg.gps_lat},${pkg.gps_lng}&z=15&output=embed`}
-                allowFullScreen
+            <div className="w-full h-[350px] bg-[#121212] relative z-0">
+              
+              {/* THE FIX: Smartly select which GPS coordinates to display */}
+              <LocationPickerMap 
+                lat={pkg.recipient?.is_location_verified ? Number(pkg.recipient.gps_lat) : Number(pkg.gps_lat)} 
+                lng={pkg.recipient?.is_location_verified ? Number(pkg.recipient.gps_lng) : Number(pkg.gps_lng)} 
+                onLocationSelect={() => {}} // View-only mode
               />
-              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center pointer-events-none">
-                 <div className="bg-[#1A1A1A] p-4 rounded-full mb-3 border border-gray-700">
-                    <MapPin size={32} className="text-gray-400" />
-                 </div>
-                 <h3 className="text-lg font-bold text-white tracking-widest drop-shadow-md">LOCATION UNVERIFIED</h3>
-              </div>
+
+              {!pkg.recipient?.is_location_verified && (
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center pointer-events-none z-10">
+                   <div className="bg-[#1A1A1A] p-4 rounded-full mb-3 border border-gray-700 shadow-lg">
+                      <MapPin size={32} className="text-gray-400" />
+                   </div>
+                   <h3 className="text-lg font-bold text-white tracking-widest drop-shadow-md">LOCATION UNVERIFIED</h3>
+                </div>
+              )}
             </div>
             
             <div className="p-6 bg-[#1A1A1A] border-t border-[#2E2E2E] flex items-center justify-between">
@@ -119,7 +131,7 @@ export default function PackageDetailsPage() {
                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-green-700 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-all"
                >
                  {smsMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : smsSent ? <CheckCircle2 size={16} /> : <MessageSquare size={16} />}
-                 {smsSent ? 'SMS Logged Successfully!' : 'Request GPS Pin via SMS'}
+                 {smsSent ? 'SMS Sent Successfully!' : 'Request GPS Pin via SMS'}
                </button>
             </div>
           </div>
@@ -162,7 +174,7 @@ export default function PackageDetailsPage() {
             </div>
           </div>
 
-          {/* ACTION BUTTONS (Matching UI Page 18) */}
+          {/* ACTION BUTTONS */}
           <div className="flex gap-4 pt-2">
             <button 
               onClick={openEditModal}
