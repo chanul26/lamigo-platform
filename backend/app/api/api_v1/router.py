@@ -2,11 +2,15 @@ from fastapi import APIRouter
 
 # Import ALL feature routers (Added 'commissions')
 from app.api.api_v1.endpoints import (
-    auth, organizations, branches, users, recipients, 
-    packages, preferences, trips, incidents, tasks, instructions, contexts, drivers, commissions, financial_profiles, tracking, communication, settlements
+    auth, organizations, branches, users, recipients,
+    packages, preferences, trips, incidents, tasks, instructions, contexts, drivers, commissions, financial_profiles, tracking, communication, settlements,
+    public_tracking,
 )
 
 api_router = APIRouter()
+
+# Anonymous customer portal (SMS tracking links — no Firebase JWT)
+api_router.include_router(public_tracking.router, prefix="/public", tags=["Public Tracking"])
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(organizations.router, prefix="/organizations", tags=["Organizations"])
