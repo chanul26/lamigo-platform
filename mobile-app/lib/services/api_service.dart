@@ -203,4 +203,45 @@ class ApiService {
       return null;
     }
   }
+
+  // POST /api/v1/incidents/
+  Future<Map<String, dynamic>?> createIncident(
+    String tripId,
+    String type,
+    String description,
+    double lat,
+    double lng,
+  ) async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/incidents/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'trip_id': tripId,
+          'type': type,
+          'description': description,
+          'reported_at_lat': lat,
+          'reported_at_lng': lng,
+        }),
+      );
+
+      debugPrint(
+        '[API] createIncident: ${response.statusCode} ${response.body}',
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('createIncident error: $e');
+      return null;
+    }
+  }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart'; // For GPS functionality (to be implemented)
+import '../../../services/api_service.dart';
 
 class EmergencyScreen extends StatefulWidget {
   final String tripId;
@@ -12,6 +14,32 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   String? _selectedType;
   final TextEditingController _descriptionController = TextEditingController();
   bool _isLoading = false;
+  final ApiService _apiService = ApiService();
+  double _lat = 6.9271; // default
+  double _lng = 79.8612; // default
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('[Emergency] tripId received: ${widget.tripId}');
+    _captureGPS();
+  }
+
+  Future<void> _captureGPS() async {
+    try {
+      final permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+
+      final position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _lat = position.latitude;
+        _lng = position.longitude;
+      });
+      debugPrint('[Emergency] GPS captured: $_lat, $_lng');
+    } catch (e) {
+      debugPrint('GPS error: $e');
+    }
+  }
 
   Widget _emergencyTypeButton({
     required String type,
@@ -58,25 +86,45 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   // Body: { trip_id, type, description, reported_at_lat, reported_at_lng }
   Future<void> _reportEmergency() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Emergency Reported!'),
-          content: const Text('Help is on the way. Stay safe!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+    try {
+      final result = await _apiService.createIncident(
+        widget.tripId,
+        _selectedType!,
+        _descriptionController.text,
+        _lat,
+        _lng,
       );
+
+      setState(() => _isLoading = false);
+
+      if (result != null && mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Emergency Reported!'),
+            content: const Text('Help is on the way. Stay safe!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to report: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -120,14 +168,14 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: 
+              Row(
                 children: [
-                  Icon(Icons.location_on, color: Colors.grey, size: 16),
-                  SizedBox(width: 8),
+                  const Icon(Icons.location_on, color: Colors.grey, size: 16),
+                  const SizedBox(width: 8),
                   Text(
-                    // TODO: Replace with real GPS coordinates from Geolocator
-                    'GPS: 6.9271, 79.8612 (Auto-captured)',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    'GPS: $_lat, $_lng (Auto-captured)',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
