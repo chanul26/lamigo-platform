@@ -32,9 +32,11 @@ jobs:
         
         # 1. Force Docker to stop ignoring the file
         touch backend/.dockerignore
+        echo "" >> backend/.dockerignore
         echo "!credentials/firebase-adminsdk.json" >> backend/.dockerignore
         
-        # 2. Force the Dockerfile to explicitly copy this exact file
+        # 2. Add a critical blank line so we DO NOT break the Uvicorn command!
+        echo "" >> backend/Dockerfile
         echo "COPY credentials/firebase-adminsdk.json credentials/firebase-adminsdk.json" >> backend/Dockerfile
 
     - name: Authenticate to Google Cloud
