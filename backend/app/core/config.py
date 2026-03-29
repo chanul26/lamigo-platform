@@ -26,6 +26,9 @@ class Settings:
     AWS_SECRET_ACCESS_KEY: str | None = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_REGION: str | None = os.getenv("AWS_REGION")
 
+    # --- Google Cloud Credentials ---
+    GOOGLE_MAPS_API_KEY: str | None = os.getenv("GOOGLE_MAPS_API_KEY")
+
     # We fetch the raw string first, then parse it into a list in __init__
     _CORS_ORIGINS_RAW: str | None = os.getenv("BACKEND_CORS_ORIGINS")
     BACKEND_CORS_ORIGINS: list[str] = []
@@ -50,6 +53,10 @@ class Settings:
             raise ValueError("❌ CRITICAL ERROR: AWS_SECRET_ACCESS_KEY is missing! Check your .env file.")
         if not self.AWS_REGION:
             raise ValueError("❌ CRITICAL ERROR: AWS_REGION is missing! Check your .env file.")
+
+        # --- Google Cloud Validation ---
+        if not self.GOOGLE_MAPS_API_KEY:
+            raise ValueError("❌ CRITICAL ERROR: GOOGLE_MAPS_API_KEY is missing! Check your .env file.")
 
         # --- CORS Validation and Parsing ---
         if not self._CORS_ORIGINS_RAW:
