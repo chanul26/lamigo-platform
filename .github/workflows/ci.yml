@@ -68,7 +68,7 @@ jobs:
         # Cloud Run needs all your required environment variables injected here
         env_vars: |
           FIREBASE_CREDENTIALS_PATH=credentials/firebase-adminsdk.json
-          BACKEND_CORS_ORIGINS=*
+          BACKEND_CORS_ORIGINS=["*"]
           SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
           DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
