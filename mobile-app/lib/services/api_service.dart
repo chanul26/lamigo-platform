@@ -84,4 +84,51 @@ class ApiService {
       return null;
     }
   }
+
+  // GET /api/v1/trips/
+  Future<List<dynamic>?> getActiveTrips() async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/trips/?status=active'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      debugPrint('[API] getActiveTrips: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('getActiveTrips error: $e');
+      return null;
+    }
+  }
+
+  // GET /api/v1/tasks/
+  Future<List<dynamic>?> getTasks(String tripId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/tasks/?trip_id=$tripId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      debugPrint('[API] getTasks: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('getTasks error: $e');
+      return null;
+    }
+  }
+  
 }
