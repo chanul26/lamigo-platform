@@ -7,6 +7,7 @@ import 'Features/Home/Presentation/home_screen.dart';
 import 'Features/Trip/Presentation/trip_screen.dart';
 import 'Features/Trip/Presentation/stop_detail_screen.dart';
 import 'Features/Trip/Presentation/emergency_screen.dart';
+import 'Features/Home/Presentation/driver_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,7 @@ void main() async {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const DriverProfileScreen(),
         '/trip': (context) {
           final tripId =
               ModalRoute.of(context)!.settings.arguments as String? ?? '';

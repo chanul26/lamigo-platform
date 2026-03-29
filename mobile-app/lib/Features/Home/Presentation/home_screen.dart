@@ -30,11 +30,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadHomeData() async {
     setState(() => _isLoading = true);
     try {
-
-      debugPrint('[Home] Loading home data...');// For debugging: Indicate start of data loading
+      debugPrint(
+        '[Home] Loading home data...',
+      ); // For debugging: Indicate start of data loading
       // GET /api/v1/auth/me — driver name
       final me = await _apiService.getCurrentUser();
-      debugPrint('[Home] me response: $me');// For debugging: Check the response from getCurrentUser
+      debugPrint(
+        '[Home] me response: $me',
+      ); // For debugging: Check the response from getCurrentUser
       if (me != null) {
         setState(
           () =>
@@ -43,7 +46,9 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // GET /api/v1/trips/ — active trip
-      debugPrint('[Home] Calling Active Trips API...');// For debugging: Indicate API call for active trips
+      debugPrint(
+        '[Home] Calling Active Trips API...',
+      ); // For debugging: Indicate API call for active trips
       final trips = await _apiService.getActiveTrips();
       debugPrint('[Home] trips response: $trips');
       if (trips != null && trips.isNotEmpty) {
@@ -115,10 +120,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.grey[300],
-                          child: const Icon(Icons.person, color: Colors.grey),
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/profile'),
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.grey[300],
+                            child: const Icon(Icons.person, color: Colors.grey),
+                          ),
                         ),
                       ],
                     ),
@@ -276,7 +284,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          debugPrint('[Home] Navigating to trip with ID: $_tripId');// For debugging: Ensure tripId is correct before navigation
+                          debugPrint(
+                            '[Home] Navigating to trip with ID: $_tripId',
+                          ); // For debugging: Ensure tripId is correct before navigation
                           Navigator.pushNamed(
                             context,
                             '/trip',
