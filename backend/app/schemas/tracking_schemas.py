@@ -99,3 +99,7 @@ class PublicPreferenceCreate(BaseModel):
 
 class PublicPreferenceResponse(BaseModel):
     message: str
+
+class PublicRejectResponse(BaseModel):
+    """Response when a customer rejects a scheduled delivery."""
+    message: str
