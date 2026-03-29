@@ -63,6 +63,7 @@ jobs:
         service: lamigo-backend
         region: ${{ env.REGION }}
         image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        flags: '--port=8000'
         
         # Cloud Run needs all your required environment variables injected here
         env_vars: |
