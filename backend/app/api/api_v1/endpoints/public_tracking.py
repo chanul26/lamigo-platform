@@ -143,3 +143,29 @@ async def post_public_preference(
             detail="No package found for this tracking number.",
         )
     return resp
+
+@router.post(
+    "/tracking/{tracking_id}/reject",
+    response_model=PublicPreferenceResponse,
+    summary="Reject a scheduled delivery date (no auth)",
+)
+async def post_public_reject_delivery(
+    tracking_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Allows a customer to reject a scheduled delivery. 
+    Resets the package to TO_BE_DELIVERED and fails the active task.
+    """
+    resp, err = await public_tracking_service.reject_customer_delivery_by_tracking_id(
+        db, 
+        tracking_id=tracking_id
+    )
+    
+    if err == "not_found":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No package found for this tracking number.",
+        )
+        
+    return resp

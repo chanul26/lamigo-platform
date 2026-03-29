@@ -2,11 +2,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from app.core.dynamodb import dynamodb_resource
-from sqlalchemy.orm import Session
-from fastapi import HTTPException
-from app.models.package import Package
-from app.models.delivery_task import DeliveryTask
-from app.models.enums import PackageStatus, TaskStatus, FailureType
+
 
 logger = logging.getLogger(__name__)
 
@@ -52,33 +48,3 @@ def log_driver_location(
         
     except Exception as e:
         logger.error(f"Failed to write GPS location to DynamoDB for driver {driver_id}: {e}")
-
-
-def reject_customer_delivery(db: Session, tracking_id: str):
-    """
-    Handles the logic when a customer clicks 'Reject Date' on the public portal.
-    Resets the package to TO_BE_DELIVERED and fails the active DeliveryTask.
-    """
-    # 1. Find the package
-    package = db.query(Package).filter(Package.tracking_id == tracking_id).first()
-    if not package:
-        raise HTTPException(status_code=404, detail="Package not found")
-
-    # 2. Revert package status so it goes back to the Station Manager's dashboard
-    package.status = PackageStatus.TO_BE_DELIVERED
-
-    # 3. Find the active delivery task
-    active_task = db.query(DeliveryTask).filter(
-        DeliveryTask.package_id == package.package_id,
-        DeliveryTask.status.in_([TaskStatus.SCHEDULED, TaskStatus.ON_TRIP])
-    ).first()
-
-    # 4. Mark the task as failed specifically because the customer cancelled
-    if active_task:
-        active_task.status = TaskStatus.FAILED
-        active_task.failure_type = FailureType.CANCELLED_BY_RECIPIENT
-
-    # Save changes to the database
-    db.commit()
-    
-    return {"message": "Delivery successfully rejected and rescheduled."}
