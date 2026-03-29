@@ -1,45 +1,81 @@
-name: LamiGo Backend CI
+name: LamiGo Backend CI/CD
 
-# 1. Trigger: When do we run?
 on:
   push:
-    branches: [ "main", "dev", "feature/*" ]  # Run on pushes to main, dev, or features
+    branches: [ "main", "dev", "chore/setup-gcp-cd" ]  
   pull_request:
-    branches: [ "main", "dev" ]               # Run on PRs targeting main/dev
+    branches: [ "main", "dev" ]
+
+env:
+  PROJECT_ID: lamigo-backend-production
+  REGION: asia-south1
+  REPO_NAME: lamigo-repo
+  IMAGE_NAME: backend-image
 
 jobs:
-  # 2. The Job: "Build and Test"
   build-and-test:
-    runs-on: ubuntu-latest  # Use a Linux server provided by GitHub
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
     steps:
-    # A. Check out the code
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # B. Set up Docker (GitHub Actions comes with it, but this setup ensures compatibility)
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    # C. Create a dummy .env file in the ROOT (required by docker-compose)
-    - name: Create Dummy Env File
+    # --- THE MAGIC FIX IS HERE ---
+    - name: Inject Firebase Credentials
       run: |
-        echo "DB_USER=postgres" >> .env
-        echo "DB_PASSWORD=password" >> .env
-        echo "DB_PORT=5432" >> .env
-        echo "DB_NAME=lamigo_db" >> .env
-        echo "SECRET_KEY=ci-test-key-123" >> .env
-        echo "DATABASE_URL=postgresql+psycopg://postgres:password@db:5432/lamigo_db" >> .env
+        mkdir -p backend/credentials
+        echo '${{ secrets.FIREBASE_CREDENTIALS_JSON }}' > backend/credentials/firebase-adminsdk.json
+        
+        # 1. Force Docker to stop ignoring the file
+        touch backend/.dockerignore
+        echo "" >> backend/.dockerignore
+        echo "!credentials/firebase-adminsdk.json" >> backend/.dockerignore
+        
+        # 2. Add a critical blank line so we DO NOT break the Uvicorn command!
+        echo "" >> backend/Dockerfile
+        echo "COPY credentials/firebase-adminsdk.json credentials/firebase-adminsdk.json" >> backend/Dockerfile
 
-    # D. Build the Docker Image
-    - name: Build Docker Image
-      run: |
-        docker compose build backend
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        token_format: 'access_token'
+        workload_identity_provider: '${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}'
+        service_account: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
 
-    # E. Verify Backend Starts
-    - name: Verify Backend Starts
+    - name: Login to Artifact Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGION }}-docker.pkg.dev
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
+
+    - name: Build and Push Docker Image
       run: |
-        docker compose up -d backend
-        # Give it a second to initialize
-        sleep 5
-        docker compose exec -T backend python --version
+        IMAGE_PATH="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+        docker build -t $IMAGE_PATH ./backend
+        docker push $IMAGE_PATH
+
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: lamigo-backend
+        region: ${{ env.REGION }}
+        image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        flags: '--port=8000'
+        
+        env_vars: |
+          FIREBASE_CREDENTIALS_PATH=credentials/firebase-adminsdk.json
+          BACKEND_CORS_ORIGINS=["*"]
+          SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
+          DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          NOTIFY_USER_ID=${{ secrets.NOTIFY_USER_ID }}
+          NOTIFY_API_KEY=${{ secrets.NOTIFY_API_KEY }}
+          NOTIFY_SENDER_ID=${{ secrets.NOTIFY_SENDER_ID }}
