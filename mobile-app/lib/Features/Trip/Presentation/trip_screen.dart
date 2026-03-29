@@ -1,73 +1,6 @@
 import 'package:flutter/material.dart';
-
-class DeliveryStop {
-  final String id;
-  final int sequence;
-  final String recipientName;
-  final String address;
-  final String eta;
-  final double codAmount;
-  final bool isCompleted;
-
-  const DeliveryStop({
-    required this.id,
-    required this.sequence,
-    required this.recipientName,
-    required this.address,
-    required this.eta,
-    required this.codAmount,
-    required this.isCompleted,
-  });
-}
-
-// TODO: Replace with GET /api/v1/tasks?trip_id={id} — poll every 30s
-const List<DeliveryStop> MOCK_STOPS = [
-  DeliveryStop(
-    id: '1',
-    sequence: 1,
-    recipientName: 'Ravindu Perera',
-    address: '120/6 Colombo 03',
-    eta: '10:46 AM',
-    codAmount: 4500,
-    isCompleted: true,
-  ),
-  DeliveryStop(
-    id: '2',
-    sequence: 2,
-    recipientName: 'Saman Thirimanna',
-    address: '130/21 Colombo 03',
-    eta: '11:03 AM',
-    codAmount: 3200,
-    isCompleted: false,
-  ),
-  DeliveryStop(
-    id: '3',
-    sequence: 3,
-    recipientName: 'HCM Holdings',
-    address: '10/3 Colombo 03',
-    eta: '11:28 AM',
-    codAmount: 8900,
-    isCompleted: false,
-  ),
-  DeliveryStop(
-    id: '4',
-    sequence: 4,
-    recipientName: 'Nimal Perera',
-    address: '45/2 Colombo 05',
-    eta: '11:45 AM',
-    codAmount: 1500,
-    isCompleted: false,
-  ),
-  DeliveryStop(
-    id: '5',
-    sequence: 5,
-    recipientName: 'Kamala Silva',
-    address: '78/1 Colombo 07',
-    eta: '12:10 PM',
-    codAmount: 6700,
-    isCompleted: false,
-  ),
-];
+import 'dart:async';
+import '../../../services/api_service.dart';
 
 class TripScreen extends StatefulWidget {
   final String tripId;
@@ -78,6 +11,49 @@ class TripScreen extends StatefulWidget {
 }
 
 class _TripScreenState extends State<TripScreen> {
+  final ApiService _apiService = ApiService();
+
+  List<dynamic> _stops = [];
+  int _completedStops = 0;
+  int _totalStops = 0;
+  bool _isLoading = true;
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+    debugPrint('[TripScreen] tripId received: ${widget.tripId}');// For debugging: Ensure tripId is correct
+    // Poll every 30 seconds
+    _pollingTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _loadTasks(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadTasks() async {
+    try {
+      final tasks = await _apiService.getTasks(widget.tripId);
+      setState(() {
+        _stops = tasks ?? [];
+        _totalStops = _stops.length;
+        _completedStops = _stops
+            .where((t) => t['status'] == 'delivered')
+            .length;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('loadTasks error: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,9 +71,9 @@ class _TripScreenState extends State<TripScreen> {
                 fontSize: 16,
               ),
             ),
-            const Text(
-              '29 stops remaining',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+            Text(
+              '${_totalStops - _completedStops} stops remaining',
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ],
         ),
@@ -106,160 +82,172 @@ class _TripScreenState extends State<TripScreen> {
           IconButton(
             icon: const Icon(Icons.warning_amber, color: Colors.orange),
             onPressed: () {
-              Navigator.pushNamed(context, '/emergency');
+              Navigator.pushNamed(
+                context,
+                '/emergency',
+                arguments: widget.tripId,
+              );
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Progress HUD
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            color: Colors.white,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                const Text(
-                  'Today\'s Progress',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                // Progress HUD
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  color: Colors.white,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Today\'s Progress',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF8C42),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$_completedStops/$_totalStops Completed',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF8C42),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    '1/5 Completed',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+
+                // Stop list
+                Expanded(
+                  child: _stops.isEmpty
+                      ? const Center(child: Text('No stops found'))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _stops.length,
+                          itemBuilder: (context, index) {
+                            final stop = _stops[index];
+                            final isCompleted = stop['status'] == 'delivered';
+                            final sequence =
+                                stop['sequence_order'] ?? index + 1;
+                            final recipientName =
+                                stop['package']?['recipient_name'] ?? '';
+                            final address =
+                                stop['package']?['delivery_address'] ?? '';
+                            final cod = stop['package']?['cod_amount'] ?? 0;
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/stop-detail',
+                                  arguments: stop['id'],
+                                );
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isCompleted
+                                        ? Colors.green.withOpacity(0.3)
+                                        : Colors.grey.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Sequence number
+                                    Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: isCompleted
+                                            ? Colors.green
+                                            : const Color(0xFFFF8C42),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: isCompleted
+                                            ? const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 16,
+                                              )
+                                            : Text(
+                                                '$sequence',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+
+                                    // Stop details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            recipientName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            address,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // COD
+                                    Text(
+                                      'Rs. $cod',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
-          ),
-
-          // Stop list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: MOCK_STOPS.length,
-              itemBuilder: (context, index) {
-                final stop = MOCK_STOPS[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/stop-detail', arguments: stop.id);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: stop.isCompleted
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // Sequence number
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: stop.isCompleted
-                                ? Colors.green
-                                : const Color(0xFFFF8C42),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: stop.isCompleted
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 16,
-                                  )
-                                : Text(
-                                    '${stop.sequence}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Stop details
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                stop.recipientName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                stop.address,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // ETA
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              stop.eta,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: Color(0xFFFF8C42),
-                              ),
-                            ),
-                            Text(
-                              'Rs. ${stop.codAmount.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -10,10 +10,8 @@ import 'Features/Trip/Presentation/emergency_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -22,9 +20,21 @@ void main() async {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        '/trip': (context) => const TripScreen(tripId: 'TRP-001'),
-        '/stop-detail': (context) => const StopDetailScreen(stopId: 'STOP-001'),
-        '/emergency': (context) => const EmergencyScreen(tripId: 'TRP-001'),
+        '/trip': (context) {
+          final tripId =
+              ModalRoute.of(context)!.settings.arguments as String? ?? '';
+          return TripScreen(tripId: tripId);
+        },
+        '/stop-detail': (context) {
+          final taskId =
+              ModalRoute.of(context)!.settings.arguments as String? ?? '';
+          return StopDetailScreen(stopId: taskId);
+        },
+        '/emergency': (context) {
+          final tripId =
+              ModalRoute.of(context)!.settings.arguments as String? ?? '';
+          return EmergencyScreen(tripId: tripId);
+        },
       },
     ),
   );
