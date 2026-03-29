@@ -21,7 +21,6 @@ api_router.include_router(tracking.router, prefix="/tracking", tags=["Tracking"]
 # Plug in the new DynamoDB Communication route
 api_router.include_router(communication.router, prefix="/communication", tags=["Communication Logs"])
 api_router.include_router(users.router, prefix="/users", tags=["Users & Staff"])
-api_router.include_router(recipients.router, prefix="/recipients", tags=["Recipients"])
 api_router.include_router(packages.router, prefix="/packages", tags=["Packages"])
 api_router.include_router(preferences.router, prefix="/preferences", tags=["Delivery Preferences"])
 api_router.include_router(trips.router, prefix="/trips", tags=["Trips"])

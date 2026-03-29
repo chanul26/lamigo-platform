@@ -63,4 +63,10 @@ export const trackingClient = {
       method: 'POST',
       body: JSON.stringify(data)
     }),
+
+  // 5. Reject scheduled delivery
+  rejectDelivery: (trackingId: string): Promise<{message: string}> => 
+    fetchPublicApi<{message: string}>(`/public/tracking/${trackingId}/reject`, { 
+      method: 'POST' 
+    }),
 };
