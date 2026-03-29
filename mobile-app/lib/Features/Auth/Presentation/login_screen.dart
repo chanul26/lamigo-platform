@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,48 +10,38 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Controllers for real input
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final _storage = const FlutterSecureStorage();
+  
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
   Future<void> _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) return;
-
     setState(() => _isLoading = true);
-
     try {
-      // ✅ FIX: Using Firebase Email/Pass SDK (Requirement: Replace /api/health)
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // REPLACE /api/health with real Firebase Sign-in
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // ✅ FIX: Retrieve JWT Token
       String? token = await userCredential.user?.getIdToken();
 
       if (token != null) {
-        // ✅ FIX: Store in Secure Storage (Requirement: No SharedPreferences)
-        await _storage.write(key: 'jwt_token', value: token);
+        // REQUIREMENT: Use flutter_secure_storage, NOT SharedPreferences
+        await _storage.write(key: 'auth_token', value: token);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login Successful')),
-          );
           Navigator.pushReplacementNamed(context, '/home');
         }
       }
     } on FirebaseAuthException catch (e) {
+      // REQUIREMENT: Show Firebase error code
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Auth Error: ${e.code}"), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: ${e.code}')),
         );
       }
     } finally {
@@ -62,47 +52,37 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Dark theme as per project style
+      backgroundColor: const Color(0xFF121212),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.lock_person, size: 80, color: Colors.blueAccent),
+            const Icon(Icons.person_pin, size: 80, color: Colors.blueAccent),
+            const SizedBox(height: 40),
+            const Text("Driver Login", textAlign: TextAlign.center, 
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 40),
             TextField(
               controller: _emailController,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Email", 
-                labelStyle: TextStyle(color: Colors.grey),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-              ),
+              decoration: InputDecoration(hintText: "Email", filled: true, 
+                  fillColor: const Color(0xFF1E1E1E), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Password", 
-                labelStyle: TextStyle(color: Colors.grey),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-              ),
+              decoration: InputDecoration(hintText: "Password", filled: true, 
+                  fillColor: const Color(0xFF1E1E1E), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
             ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white) 
-                  : const Text("SIGN IN", style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _handleLogin,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: _isLoading ? const CircularProgressIndicator() : const Text("LOGIN"),
             ),
           ],
         ),
