@@ -13,7 +13,7 @@ env:
   IMAGE_NAME: backend-image
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
 
     permissions:
