@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; 
+import '../../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,101 +11,279 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final _storage = const FlutterSecureStorage();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ApiService _apiService = ApiService();
+  String _verificationId = '';
   bool _isLoading = false;
+  bool _otpSent = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) return;
+  // TODO: Replace with Firebase Phone Auth
+  // FirebaseAuth.instance.verifyPhoneNumber(phoneNumber, verificationCompleted, verificationFailed, codeSent, codeAutoRetrievalTimeout)
+  Future<void> _sendOTP() async {
+    if (_phoneController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your phone number')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber: _phoneController.text,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        await _signInWithCredential(credential);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verification failed: ${e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        setState(() {
+          _isLoading = false;
+          _otpSent = true;
+          _verificationId = verificationId;
+        });
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        _verificationId = verificationId;
+      },
+    );
+  }
+
+  Future<void> _verifyOTP() async {
+    if (_otpController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter the OTP')));
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      // ✅ FIX: Using Firebase Email/Pass SDK (Requirement: Replace /api/health)
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: _otpController.text,
       );
+      await _signInWithCredential(credential);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid OTP: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
 
-      // ✅ FIX: Retrieve JWT Token
-      String? token = await userCredential.user?.getIdToken();
+  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
+    try {
+      debugPrint('[Login] signInWithCredential: starting Firebase sign-in');
+      final userCredential = await _auth.signInWithCredential(credential);
+      debugPrint('[Login] Firebase sign-in success: uid=${userCredential.user?.uid}');
 
-      if (token != null) {
-        // ✅ FIX: Store in Secure Storage (Requirement: No SharedPreferences)
-        await _storage.write(key: 'jwt_token', value: token);
+      final token = await userCredential.user?.getIdToken();
+      if (token == null) throw Exception('Failed to get ID token from Firebase');
+      debugPrint('[Login] Got Firebase ID token (length=${token.length})');
 
+      final userProfile = await _apiService.loginWithFirebaseToken(token);
+      debugPrint('[Login] userProfile returned: $userProfile');
+
+      if (userProfile == null) {
+        await _auth.signOut();
+        setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login Successful')),
+            const SnackBar(
+              content: Text(
+                'Access denied. Phone number not registered as a driver.',
+              ),
+              backgroundColor: Colors.red,
+            ),
           );
-          Navigator.pushReplacementNamed(context, '/home');
         }
+        return;
       }
-    } on FirebaseAuthException catch (e) {
+
+      // Log the full profile so we can see the exact key/value for role
+      debugPrint('[Login] userProfile keys: ${userProfile.keys.toList()}');
+      debugPrint('[Login] userProfile[role] = ${userProfile['role']}');
+
+      if (userProfile['role'] != 'DRIVER') {
+        await _auth.signOut();
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Access denied. Not a driver account. (role=${userProfile['role']})',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      debugPrint('[Login] Role verified as DRIVER — navigating to /home');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on TimeoutException {
+      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Auth Error: ${e.code}"), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Cannot reach server. Check your connection.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } on FirebaseAuthException catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Firebase error: ${e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Dark theme as per project style
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.lock_person, size: 80, color: Colors.blueAccent),
-            const SizedBox(height: 40),
-            TextField(
-              controller: _emailController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Email", 
-                labelStyle: TextStyle(color: Colors.grey),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Password", 
-                labelStyle: TextStyle(color: Colors.grey),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-              ),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Logo
+              Center(
+                child: Image.asset(
+                  'assets/images/LamiGo_Logo_Light.svg',
+                  height: 80,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.local_shipping,
+                    size: 80,
+                    color: Colors.orange,
+                  ),
                 ),
-                child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white) 
-                  : const Text("SIGN IN", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-            ),
-          ],
+              const SizedBox(height: 32),
+
+              // Title
+              const Text(
+                'Welcome Driver',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Login to start your Deliveries',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 40),
+
+              // Phone number field
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                enabled: !_otpSent,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: '+94771234567',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // OTP field — shows after OTP is sent
+              if (_otpSent)
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  decoration: InputDecoration(
+                    labelText: 'Enter OTP',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 24),
+
+              // Button
+              ElevatedButton(
+                onPressed: _isLoading
+                    ? null
+                    : (_otpSent ? _verifyOTP : _sendOTP),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        _otpSent ? 'Verify OTP' : 'Send OTP',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+
+              // Resend OTP
+              if (_otpSent)
+                TextButton(
+                  onPressed: () => setState(() => _otpSent = false),
+                  child: const Text(
+                    'Resend OTP',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
