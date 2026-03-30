@@ -28,7 +28,8 @@ class LoginScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Connecting to backend...')),
                 );
-                await ApiService().login('dummy', 'dummy');
+                // TODO: Replace with real Firebase token + flow.
+                await ApiService().loginWithFirebaseToken('dummy');
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, padding: const EdgeInsets.symmetric(vertical: 16)),
               child: const Text("LOGIN"),

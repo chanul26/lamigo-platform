@@ -20,6 +20,14 @@ class _HomeScreenState extends State<HomeScreen> {
   double _nextStopCod = 0;
   String _tripId = '';
   bool _isLoading = true;
+  String _tripStatus = '';
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
 
   @override
   void initState() {
@@ -51,12 +59,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ); // For debugging: Indicate API call for active trips
       final trips = await _apiService.getActiveTrips();
       debugPrint('[Home] trips response: $trips');
+      debugPrint('[Home] trips length: ${trips?.length}');
       if (trips != null && trips.isNotEmpty) {
         final trip = trips[0];
         setState(() {
-          _tripId = trip['id'] ?? '';
-          _completedStops = trip['completed_stops'] ?? 0;
-          _totalStops = trip['total_stops'] ?? 0;
+          _tripId = trip['trip_id'] ?? '';
+          _tripStatus = trip['status'] ?? '';
+          _completedStops = trip['delivered_count'] ?? 0;
+          _totalStops = trip['total_tasks_count'] ?? 0;
         });
 
         // GET /api/v1/tasks/ — next stop
@@ -65,14 +75,16 @@ class _HomeScreenState extends State<HomeScreen> {
           if (tasks != null && tasks.isNotEmpty) {
             // Find first pending task
             final nextTask = tasks.firstWhere(
-              (t) => t['status'] == 'pending',
+              (t) {
+                final s = (t['status'] ?? '').toString().toUpperCase();
+                return s != 'COMPLETED' && s != 'FAILED';
+              },
               orElse: () => tasks[0],
             );
             setState(() {
               _nextStopName = nextTask['package']?['recipient_name'] ?? '';
-              _nextStopAddress = nextTask['package']?['delivery_address'] ?? '';
-              _nextStopCod = (nextTask['package']?['cod_amount'] ?? 0)
-                  .toDouble();
+              _nextStopAddress = nextTask['package']?['address'] ?? '';
+              _nextStopCod = _toDouble(nextTask['package']?['cod_amount']);
             });
           }
         }
@@ -283,15 +295,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          debugPrint(
-                            '[Home] Navigating to trip with ID: $_tripId',
-                          ); // For debugging: Ensure tripId is correct before navigation
-                          Navigator.pushNamed(
-                            context,
-                            '/trip',
-                            arguments: _tripId,
-                          );
+                        onPressed: () async {
+                          debugPrint('[Button] tripId: $_tripId, tripStatus: $_tripStatus'); // For debugging: Check tripId and tripStatus before action
+                          if (_tripId.isEmpty) {
+                            debugPrint('[Button] tripId is empty - no trip found!'); // For debugging: Indicate no active trip
+                            return;
+                          }
+
+                          if (_tripStatus == 'DRAFT') {
+                            await _apiService.startTrip(_tripId);
+                          }
+
+                          if (mounted) {
+                            Navigator.pushNamed(
+                              context,
+                              '/trip',
+                              arguments: _tripId,
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
@@ -300,19 +321,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Start Today's Ride",
-                              style: TextStyle(
+                              _tripStatus == 'DRAFT'
+                                  ? "Start Today's Ride"
+                                  : _tripStatus == 'IN_PROGRESS'
+                                  ? "Continue Ride"
+                                  : "View Trip",
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(
+                            const SizedBox(width: 8),
+                            const Icon(
                               Icons.arrow_forward,
                               color: Colors.white,
                               size: 18,

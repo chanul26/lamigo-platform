@@ -44,7 +44,8 @@ class _TripScreenState extends State<TripScreen> {
         _stops = tasks ?? [];
         _totalStops = _stops.length;
         _completedStops = _stops
-            .where((t) => t['status'] == 'delivered')
+            .where((t) =>
+                (t['status'] ?? '').toString().toUpperCase() == 'COMPLETED')
             .length;
         _isLoading = false;
       });
@@ -145,13 +146,16 @@ class _TripScreenState extends State<TripScreen> {
                           itemCount: _stops.length,
                           itemBuilder: (context, index) {
                             final stop = _stops[index];
-                            final isCompleted = stop['status'] == 'delivered';
+                            final isCompleted = (stop['status'] ?? '')
+                                .toString()
+                                .toUpperCase() ==
+                                'COMPLETED';
                             final sequence =
-                                stop['sequence_order'] ?? index + 1;
+                                stop['sequence_number'] ?? stop['sequence_order'] ?? index + 1;
                             final recipientName =
                                 stop['package']?['recipient_name'] ?? '';
                             final address =
-                                stop['package']?['delivery_address'] ?? '';
+                                stop['package']?['address'] ?? '';
                             final cod = stop['package']?['cod_amount'] ?? 0;
 
                             return GestureDetector(
@@ -159,7 +163,7 @@ class _TripScreenState extends State<TripScreen> {
                                 Navigator.pushNamed(
                                   context,
                                   '/stop-detail',
-                                  arguments: stop['id'],
+                                  arguments: stop['task_id'],
                                 );
                               },
                               child: Container(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../services/api_service.dart';
 
 class StopDetailScreen extends StatefulWidget {
@@ -18,10 +19,21 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
   String _recipientName = '';
   String _phone = '';
   String _address = '';
+  double? _gpsLat;
+  double? _gpsLng;
   double _codAmount = 0;
   String _customerInstructions = '';
   bool _isLoading = true;
   bool _isUpdating = false;
+
+  double? _toNullableDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  double _toDouble(dynamic value) => _toNullableDouble(value) ?? 0.0;
 
   @override
   void initState() {
@@ -38,32 +50,50 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
 
   Future<void> _loadTaskDetail() async {
     try {
+      debugPrint('[StopDetail] Loading task: ${widget.stopId}');
       final task = await _apiService.getTask(widget.stopId);
       debugPrint('[StopDetail] task response: $task');
-      if (task != null) {
-        setState(() {
-          _recipientName = task['package']?['recipient_name'] ?? '';
-          _phone = task['package']?['recipient_phone'] ?? '';
-          _address = task['package']?['delivery_address'] ?? '';
-          _codAmount = (task['package']?['cod_amount'] ?? 0).toDouble();
-          _customerInstructions = task['task_instructions']?['instructions'] ?? '';
-          _isLoading = false;
-        });
+      if (!mounted) return;
+
+      if (task == null) {
+        setState(() => _isLoading = false);
+        return;
       }
+
+      final pkg = (task['package'] as Map?)?.cast<String, dynamic>();
+
+      setState(() {
+        _recipientName = pkg?['recipient_name'] ?? '';
+        _phone = pkg?['recipient_phone'] ?? '';
+        _address = pkg?['address'] ?? '';
+        _codAmount = _toDouble(pkg?['cod_amount']);
+        _gpsLat = _toNullableDouble(pkg?['gps_lat']);
+        _gpsLng = _toNullableDouble(pkg?['gps_lng']);
+
+        // Not currently part of TaskResponse schema; keep if backend sends it.
+        _customerInstructions =
+            task['task_instructions']?['instructions'] ?? '';
+
+        _isLoading = false;
+      });
     } catch (e) {
       debugPrint('loadTaskDetail error: $e');
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _updateTaskStatus(String status, {String? failureReason}) async {
+  Future<void> _updateTaskStatus(
+    String status, {
+    String? failureType,
+  }) async {
     setState(() => _isUpdating = true);
     try {
       final result = await _apiService.updateTask(
         widget.stopId,
         status,
-        failureReason: failureReason,
-        driverNotes: _notesController.text,
+        failureType: failureType,
+        // Swagger: failure_note is part of TaskUpdate for failed tasks.
+        failureNote: failureType == null ? null : _notesController.text,
       );
       if (result != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,11 +108,32 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
       debugPrint('updateTask error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to update: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
-    setState(() => _isUpdating = false);
+    if (mounted) setState(() => _isUpdating = false);
+  }
+
+  Future<void> _openGoogleMaps() async {
+    final lat = _gpsLat;
+    final lng = _gpsLng;
+    if (lat == null || lng == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Destination coordinates missing')),
+      );
+      return;
+    }
+
+    final url =
+        'https://www.google.com/maps/dir/?api=1&destination=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}';
+    final uri = Uri.parse(url);
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _showFailureReasonSheet() {
@@ -97,12 +148,19 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
             const Text('Select Failure Reason',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            ...['gate_locked', 'not_home', 'wrong_address', 'other'].map(
+            ...const <Map<String, String>>[
+              {'type': 'NOT_HOME', 'label': 'NOT HOME'},
+              {'type': 'UNREACHABLE', 'label': 'UNREACHABLE'},
+              {'type': 'RECIPIENT_REJECTED', 'label': 'RECIPIENT REJECTED'},
+              {'type': 'CANCELLED_BY_RECIPIENT', 'label': 'CANCELLED BY RECIPIENT'},
+              {'type': 'CANCELLED_BY_MANAGER', 'label': 'CANCELLED BY MANAGER'},
+              {'type': 'CANCELLED_BY_DRIVER', 'label': 'CANCELLED BY DRIVER'},
+            ].map(
               (reason) => ListTile(
-                title: Text(reason.replaceAll('_', ' ').toUpperCase()),
+                title: Text(reason['label'] ?? reason['type'] ?? ''),
                 onTap: () {
                   Navigator.pop(context);
-                  _updateTaskStatus('failed', failureReason: reason);
+                  _updateTaskStatus('FAILED', failureType: reason['type']);
                 },
               ),
             ),
@@ -212,13 +270,7 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Navigation coming soon')),
-                            );
-                          },
+                          onPressed: _isUpdating ? null : _openGoogleMaps,
                           icon: const Icon(Icons.navigation,
                               color: Colors.white),
                           label: const Text('Navigate',
@@ -235,11 +287,12 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () async {
-                            if (_phone.isNotEmpty) {
-                              await FlutterPhoneDirectCaller.callNumber(_phone);
-                            }
-                          },
+                          onPressed: (_isUpdating || _phone.isEmpty)
+                              ? null
+                              : () async {
+                                  await FlutterPhoneDirectCaller
+                                      .callNumber(_phone);
+                                },
                           icon: const Icon(Icons.call, color: Colors.white),
                           label: const Text('Call',
                               style: TextStyle(color: Colors.white)),
@@ -287,7 +340,7 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _isUpdating
                               ? null
-                              : () => _updateTaskStatus('delivered'),
+                              : () => _updateTaskStatus('COMPLETED'),
                           icon: const Icon(Icons.check_circle,
                               color: Colors.white),
                           label: const Text('Mark Delivered',
@@ -330,7 +383,7 @@ class _StopDetailScreenState extends State<StopDetailScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _isUpdating
                               ? null
-                              : () => _updateTaskStatus('rescheduled'),
+                              : () => _updateTaskStatus('SCHEDULED'),
                           icon: const Icon(Icons.schedule,
                               color: Colors.white),
                           label: const Text('Reschedule',
