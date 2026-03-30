@@ -18,6 +18,7 @@ from app.models.enums import (
     PackageStatus,
     PreferenceStatus,
     TaskStatus,
+    FailureType,
 )
 from app.models.sql_models import (
     DeliveryPreference,
@@ -261,5 +262,36 @@ async def create_delivery_preferences_for_tracking(
 
     return (
         PublicPreferenceResponse(message="Preferred dates saved successfully."),
+        ""
+    )
+async def reject_customer_delivery_by_tracking_id(
+    db: AsyncSession,
+    tracking_id: str,
+) -> tuple[Optional[PublicPreferenceResponse], str]:
+    """
+    Handles the logic when a customer clicks 'Reject Date' on the public portal.
+    Resets the package to TO_BE_DELIVERED and fails the active DeliveryTask.
+
+    Returns (response, error_code):
+      - (PublicPreferenceResponse, "") on success
+      - (None, "not_found") if package doesn't exist
+    """
+    package = await _get_package_by_tracking_id(db, tracking_id)
+    if not package:
+        return None, "not_found"
+
+    # Revert package status
+    package.status = PackageStatus.TO_BE_DELIVERED
+
+    # Find and update the active delivery task
+    task = await _get_active_delivery_task_for_package(db, package.package_id)
+    if task:
+        task.status = TaskStatus.FAILED
+        task.failure_type = FailureType.CANCELLED_BY_RECIPIENT
+
+    await db.commit()
+
+    return (
+        PublicPreferenceResponse(message="Delivery successfully rejected and rescheduled."),
         ""
     )
