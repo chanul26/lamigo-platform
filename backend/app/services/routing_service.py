@@ -280,6 +280,9 @@ async def optimize_trip_sequence(start_node: dict, end_node: dict, waypoints: Li
             print("   ✅ Sequence is physically realistic. Optimization complete.")
             break 
             
+        if current_loop_num == MAX_PENALTY_LOOPS:
+            print(f"   ⚠️ Reached MAX_PENALTY_LOOPS. Exiting.")
+
     # =========================================================================
     # 4. Final Telemetry & Payload Generation
     # =========================================================================
@@ -293,6 +296,8 @@ async def optimize_trip_sequence(start_node: dict, end_node: dict, waypoints: Li
     print("--------------------------------------")
 
     final_output = []
+    
+    # 1. Output the Standard Delivery Tasks
     for i, task_id in enumerate(best_overall_sequence):
         prev_id = start_node["id"] if i == 0 else best_overall_sequence[i-1]
         edge_data = google_edge_cache.get((prev_id, task_id))
@@ -302,7 +307,22 @@ async def optimize_trip_sequence(start_node: dict, end_node: dict, waypoints: Li
             "sequence_number": i + 1,
             "google_dist_meters": edge_data["dist"] if edge_data else 0,
             "google_eta_seconds": edge_data["time"] if edge_data else 0,
-            "data_source": edge_data["source"] if edge_data else "UNKNOWN" 
+            "data_source": edge_data["source"] if edge_data else "UNKNOWN",
+            "is_return_leg": False # Flag telling the API layer to add Service Time here
         })
+        
+    # ✨ 2. Output the Final Return-to-Hub Segment
+    # This is critical for predicting Trip.estimated_return_time_scheduled in the database
+    last_task_id = best_overall_sequence[-1]
+    return_edge_data = google_edge_cache.get((last_task_id, end_node["id"]))
+    
+    final_output.append({
+        "id": end_node["id"], # Typically the Branch/Hub ID
+        "sequence_number": len(best_overall_sequence) + 1,
+        "google_dist_meters": return_edge_data["dist"] if return_edge_data else 0,
+        "google_eta_seconds": return_edge_data["time"] if return_edge_data else 0,
+        "data_source": return_edge_data["source"] if return_edge_data else "UNKNOWN",
+        "is_return_leg": True # Tells the API layer NOT to add 10 mins service time here
+    })
         
     return final_output

@@ -3,26 +3,24 @@ import time
 import matplotlib.pyplot as plt
 from typing import List, Dict
 
-# Import the core engine we just built
+# Import the core engine orchestrator
 from app.services.routing_service import optimize_trip_sequence
 
 @pytest.mark.asyncio
 async def test_lamigo_routing_engine_15_stops():
     """
-    Tests the Haversine + Simulated Annealing + Google Circuity Penalty engine
-    using 15 realistic delivery coordinates in the Southern Province of Sri Lanka.
+    Tests the 15-stop Southern Province route. 
+    Now accounts for the +1 Return-to-Hub segment.
     """
     print("\n\n" + "="*50)
     print("🚀 INITIALIZING LAMIGO ROUTING ENGINE TEST")
     print("="*50)
 
-    # 1. Define the Hub (Start and End Node)
-    # Using the Galle Main Hub (Approximate coordinates near Galle Fort)
-    start_node = {"id": "hub_galle_start", "lat": 6.0258, "lng": 80.2176}
-    end_node = {"id": "hub_galle_end", "lat": 6.0258, "lng": 80.2176}
+    # 1. Setup Hub and Waypoints (Southern Coastal Route)
+    start_node = {"id": "hub_galle_fort", "lat": 6.0258, "lng": 80.2176}
+    end_node = {"id": "hub_galle_fort", "lat": 6.0258, "lng": 80.2176}
 
-    # 2. Define 15 Realistic Sri Lankan Waypoints (Coastal & Inland)
-    waypoints: List[Dict[str, float | str]] = [
+    waypoints = [
         {"id": "pkg_1_unawatuna", "lat": 6.0118, "lng": 80.2483},
         {"id": "pkg_2_karapitiya", "lat": 6.0645, "lng": 80.2222},
         {"id": "pkg_3_hikkaduwa", "lat": 6.1396, "lng": 80.1014},
@@ -40,10 +38,9 @@ async def test_lamigo_routing_engine_15_stops():
         {"id": "pkg_15_dodanduwa", "lat": 6.1011, "lng": 80.1417},
     ]
 
-    # Start the clock to measure algorithm efficiency
     start_time = time.time()
 
-    # 3. Execute the Master Orchestrator (Simulating a Motorcycle Dispatch)
+    # 2. Run Optimization
     optimized_sequence = await optimize_trip_sequence(
         start_node=start_node,
         end_node=end_node,
@@ -53,77 +50,55 @@ async def test_lamigo_routing_engine_15_stops():
 
     execution_time = time.time() - start_time
 
-    # 4. Assertions (To ensure the engine didn't drop or duplicate any packages)
-    assert len(optimized_sequence) == 15, f"Expected 15 tasks, got {len(optimized_sequence)}"
+    # Verify the payload contains 15 delivery tasks + 1 return leg = 16
+    assert len(optimized_sequence) == 16, f"Expected 16 segments, got {len(optimized_sequence)}"
     
-    # ==========================================
-    # 5. Output the Results to Terminal
-    # ==========================================
+    # --- STEP 3: Output Results to Terminal ---
     print(f"\n✅ ROUTING COMPLETE in {execution_time:.3f} seconds!")
-    
-    # Table Header (Now explicitly includes the Source column)
-    print(f"{'Seq':<5} | {'Package ID':<20} | {'Dist (m)':<10} | {'ETA (s)':<10} | {'Source':<10}")
+    print(f"{'Seq':<5} | {'Target ID':<20} | {'Dist (m)':<10} | {'ETA (s)':<10} | {'Source':<10}")
     print("-" * 75)
     
     total_distance = 0
     total_time = 0
 
-    # Print every step in the perfectly ordered sequence
     for step in optimized_sequence:
-        print(f"{step['sequence_number']:<5} | {step['id']:<20} | {step['google_dist_meters']:<10} | {step['google_eta_seconds']:<10} | {step.get('data_source', 'UNKNOWN'):<10}")
+        # Check if this is the final return trip to label it clearly
+        display_id = "RETURN TO HUB" if step["is_return_leg"] else step["id"]
+        
+        print(f"{step['sequence_number']:<5} | {display_id:<20} | {step['google_dist_meters']:<10} | {step['google_eta_seconds']:<10} | {step.get('data_source', 'UNKNOWN'):<10}")
+        
         total_distance += step['google_dist_meters']
         total_time += step['google_eta_seconds']
 
     print("-" * 75)
-    print(f"Total Google Predicted Distance: {total_distance / 1000:.2f} km")
-    print(f"Total Google Predicted Driving Time: {total_time / 60:.2f} minutes\n")
+    print(f"Total REAL-WORLD Distance: {total_distance / 1000:.2f} km")
+    print(f"Total REAL-WORLD Driving Time: {total_time / 60:.2f} minutes\n")
 
-    # ==========================================
-    # 6. VISUALIZE THE ROUTE (Matplotlib)
-    # ==========================================
-    
-    # Build the ordered list of coordinates
-    # Step A: Start at the Hub
+    # --- STEP 4: Visualization ---
     route_lats = [start_node["lat"]]
     route_lngs = [start_node["lng"]]
     labels = ["HUB (Galle)"]
 
-    # Step B: Add the optimized waypoints in order based on the final sequence
     waypoint_dict = {wp["id"]: wp for wp in waypoints}
     for step in optimized_sequence:
-        wp = waypoint_dict[step["id"]]
-        route_lats.append(wp["lat"])
-        route_lngs.append(wp["lng"])
-        
-        # Clean up the label for the graph (e.g., "pkg_1_unawatuna" -> "Unawatuna")
-        clean_name = step["id"].split("_")[-1].capitalize()
-        labels.append(clean_name)
+        if step["is_return_leg"]:
+            route_lats.append(end_node["lat"])
+            route_lngs.append(end_node["lng"])
+            labels.append("RETURN TO HUB")
+        else:
+            wp = waypoint_dict[step["id"]]
+            route_lats.append(wp["lat"])
+            route_lngs.append(wp["lng"])
+            labels.append(step["id"].split("_")[-1].capitalize())
 
-    # Step C: Return to the Hub at the end
-    route_lats.append(end_node["lat"])
-    route_lngs.append(end_node["lng"])
-    labels.append("HUB (Return)")
-
-    # --- Plotting Logic ---
     plt.figure(figsize=(10, 8))
-    
-    # Draw the lines connecting the points to simulate the physical journey
-    plt.plot(route_lngs, route_lats, marker='o', linestyle='-', color='#2563eb', linewidth=2, markersize=8)
-    
-    # Highlight the Hub in a distinct Red square
-    plt.plot(start_node["lng"], start_node["lat"], marker='s', color='#ef4444', markersize=12, label="Galle Hub")
+    plt.plot(route_lngs, route_lats, marker='o', linestyle='-', color='#2563eb', linewidth=2)
+    plt.plot(start_node["lng"], start_node["lat"], 'rs', markersize=12, label="Galle Hub")
 
-    # Add text labels to each point
     for i, txt in enumerate(labels):
-        # Only label the first instance of the Hub to avoid text overlap
-        if i == len(labels) - 1: continue 
+        if i == len(labels) - 1 and txt == "RETURN TO HUB": continue # Don't double label the hub
         plt.annotate(txt, (route_lngs[i], route_lats[i]), textcoords="offset points", xytext=(5,5), ha='left', fontsize=9)
 
-    plt.title(f"LamiGo Optimized Route: 15 Stops in Southern Province\nDistance: {total_distance/1000:.2f} km | Time: {total_time/60:.2f} min", fontweight='bold')
-    plt.xlabel("Longitude")
-    plt.ylabel("Latitude")
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.legend()
-    
-    # Pop open the visualizer window!
+    plt.title(f"LamiGo 15-Stop Route (Southern Province)\nFull Trip: {total_distance/1000:.2f} km", fontweight='bold')
+    plt.grid(True, alpha=0.3)
     plt.show()
