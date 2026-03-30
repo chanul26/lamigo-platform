@@ -41,7 +41,7 @@ export default function DriversPage() {
           <p className="text-gray-400">Manage all delivery personnel assigned to your branch.</p>
         </div>
         <Link 
-          href="/drivers/new" 
+          href="/drivers/register" 
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors shadow-lg"
         >
           + Register New Driver
