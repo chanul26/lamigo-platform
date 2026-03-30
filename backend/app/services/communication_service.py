@@ -1,8 +1,10 @@
 from boto3.dynamodb.conditions import Key
+import requests
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
 from app.core.dynamodb import dynamodb_resource
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -10,29 +12,58 @@ SMS_TABLE_NAME = "LamiGo_SMSLogs"
 
 def log_sms(package_id: str, recipient_phone: str, message_body: str, category: str, status: str):
     """
-    Asynchronously logs an SMS message to DynamoDB with a 90-day auto-delete (TTL).
+    Sends an SMS via Notify.lk and then asynchronously logs it to DynamoDB.
     """
+    # 1. SEND THE REAL SMS VIA NOTIFY.LK
+    try:
+        if settings.NOTIFY_USER_ID and settings.NOTIFY_API_KEY:
+            # Bulletproof Phone Number Formatting for Notify.lk
+            formatted_phone = recipient_phone.strip().replace("+", "").replace(" ", "")
+            if formatted_phone.startswith("07"):
+                formatted_phone = "94" + formatted_phone[1:]
+            
+            payload = {
+                "user_id": settings.NOTIFY_USER_ID,
+                "api_key": settings.NOTIFY_API_KEY,
+                "sender_id": settings.NOTIFY_SENDER_ID or "NotifyDEMO",
+                "to": formatted_phone,
+                "message": message_body
+            }
+            
+            response = requests.post("https://app.notify.lk/api/v1/send", data=payload, timeout=5)
+            
+            if response.status_code == 200:
+                status = "SENT" 
+            else:
+                # THIS WILL PRINT THE EXACT REASON IT FAILED IN YOUR DOCKER LOGS
+                logger.error(f"Notify.lk API Error: {response.text}")
+                print(f"🚨 SMS FAILED: {response.text}") 
+                status = "FAILED"
+        else:
+            print("🚨 SMS SKIPPED: Notify.lk API keys are missing inside the Docker container!")
+    except Exception as e:
+        logger.error(f"Failed to send SMS via Notify.lk: {e}")
+        print(f"🚨 SMS CRASH: {e}")
+        status = "FAILED"
+        
+    # 2. LOG TO DYNAMODB
     try:
         table = dynamodb_resource.Table(SMS_TABLE_NAME)
-        
-        # Calculate the exact second this message should self-destruct (90 days from now)
         expiration_time = int((datetime.now(timezone.utc) + timedelta(days=90)).timestamp())
         
         item = {
-            "sms_id": str(uuid.uuid4()),                          # Main Partition Key
-            "package_id": str(package_id),                        # GSI 1 Partition Key
-            "recipient_phone": recipient_phone,                   # GSI 2 Partition Key
+            "sms_id": str(uuid.uuid4()),                          
+            "package_id": str(package_id),                        
+            "recipient_phone": recipient_phone,                   
             "message_body": message_body,
-            "category": category,                                 # e.g., "DELIVERY_UPDATE"
-            "status": status,                                     # e.g., "SENT"
-            "created_at": datetime.now(timezone.utc).isoformat(), # Sort Key for both GSIs
-            "ttl": expiration_time                                # The AWS auto-delete trigger
+            "category": category,                                 
+            "status": status,                                     
+            "created_at": datetime.now(timezone.utc).isoformat(), 
+            "ttl": expiration_time                                
         }
-        
         table.put_item(Item=item)
         
     except Exception as e:
-        # We only log the error so a failed text log doesn't crash the main delivery flow
         logger.error(f"Failed to log SMS to DynamoDB: {e}")
 
 def log_call(user_id: str, recipient_phone: str, task_id: str, role: str, duration_seconds: int = 0):

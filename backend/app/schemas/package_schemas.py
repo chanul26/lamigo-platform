@@ -15,6 +15,9 @@ class RecipientSummary(BaseModel):
     recipient_id: UUID
     phone_number: str
     location_type: Optional[LocationType] = None
+    is_location_verified: bool
+    gps_lat: Decimal
+    gps_lng: Decimal
     
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,12 +1,12 @@
 from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, RoleChecker
 from app.models.enums import UserRole, PackageStatus
 from app.schemas.package_schemas import PackageCreate, PackageUpdate, PackageResponse
-from app.services import package_service
+from app.services import package_service, communication_service
 
 router = APIRouter()
 
@@ -17,11 +17,12 @@ ALL_ACCESS = Depends(RoleChecker([UserRole.SUPER_ADMIN, UserRole.STATION_MANAGER
 @router.post("/", response_model=PackageResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_package(
     payload: PackageCreate,
+    background_tasks: BackgroundTasks,
     current_user: dict = MANAGER_ACCESS,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Creates a package, auto-generates tracking ID, and securely handles the Recipient Upsert.
+    Creates a package, auto-generates tracking ID, and fires the Customer SMS.
     """
     branch_id = current_user.get("branch_id")
     
@@ -31,11 +32,28 @@ async def create_new_package(
             detail="Your profile does not have an assigned branch. Packages must be created by Station Managers."
         )
 
-    return await package_service.create_package_with_recipient(
+    # 1. Create the package in PostgreSQL
+    package = await package_service.create_package_with_recipient(
         db=db, 
         package_data=payload, 
         branch_id=branch_id
     )
+    
+    # 2. Auto-Trigger the 2-in-1 SMS Link
+    tracking_url = f"http://localhost:3001/track/{package['tracking_id']}"
+    sms_message = f"LamiGo: Your package has arrived at our hub! Please confirm your availability and drop your GPS pin here: {tracking_url}"
+    
+    # Send the SMS in the background
+    background_tasks.add_task(
+        communication_service.log_sms,
+        package_id=str(package['package_id']),
+        recipient_phone=payload.recipient_phone,
+        message_body=sms_message,
+        category="DELIVERY_UPDATE",
+        status="QUEUED"
+    )
+
+    return package
 
 
 @router.get("/", response_model=List[PackageResponse])
