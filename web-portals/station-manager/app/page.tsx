@@ -211,7 +211,7 @@ export default function LoginPage() {
         }}
       >
         <Image
-          src="/assets/LamiGo_Logo_Light.svg"
+          src="/assets/LamiGo_Logo_Dark.svg"
           alt="LamiGo"
           width={160}
           height={60}
