@@ -16,6 +16,9 @@ export interface RecipientSummary {
   recipient_id: string;
   phone_number: string;
   location_type?: LocationType;
+  is_location_verified: boolean;
+  gps_lat: number;
+  gps_lng: number;
 }
 
 export interface PackageCreate {

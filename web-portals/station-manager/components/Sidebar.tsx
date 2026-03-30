@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
@@ -52,14 +53,16 @@ export default function Sidebar() {
     >
       <div>
         <div className="px-4 mb-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[var(--border-radius-sm)] flex items-center justify-center font-bold text-white text-lg" style={{ backgroundColor: 'var(--primary-blue)' }}>
-              L
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>LamiGo</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Station Manager</p>
-            </div>
+          <Link href="/" className="flex flex-col gap-2">
+            <Image 
+              src="/assets/LamiGo_Logo.svg" 
+              alt="LamiGo Logo" 
+              width={140} 
+              height={40} 
+              priority
+              className="object-contain w-auto h-8"
+            />
+            <p className="text-xs font-medium pl-1" style={{ color: 'var(--text-muted)' }}>Station Manager</p>
           </Link>
         </div>
 

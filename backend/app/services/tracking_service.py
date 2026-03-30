@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from app.core.dynamodb import dynamodb_resource
 
+
 logger = logging.getLogger(__name__)
 
 # This matches the table name you just created in AWS
