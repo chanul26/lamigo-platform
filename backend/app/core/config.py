@@ -26,6 +26,11 @@ class Settings:
     AWS_SECRET_ACCESS_KEY: str | None = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_REGION: str | None = os.getenv("AWS_REGION")
 
+    # --- Notify.lk SMS Credentials ---
+    NOTIFY_USER_ID: str | None = os.getenv("NOTIFY_USER_ID")
+    NOTIFY_API_KEY: str | None = os.getenv("NOTIFY_API_KEY")
+    NOTIFY_SENDER_ID: str | None = os.getenv("NOTIFY_SENDER_ID")
+
     # We fetch the raw string first, then parse it into a list in __init__
     _CORS_ORIGINS_RAW: str | None = os.getenv("BACKEND_CORS_ORIGINS")
     BACKEND_CORS_ORIGINS: list[str] = []
