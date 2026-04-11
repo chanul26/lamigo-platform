@@ -3,7 +3,7 @@ from fastapi import APIRouter
 # Import ALL feature routers (Added 'commissions')
 from app.api.api_v1.endpoints import (
     auth, organizations, branches, users, recipients, 
-    packages, preferences, trips, incidents, tasks, instructions, contexts, drivers, commissions, financial_profiles, tracking, communication, settlements
+    packages, preferences, trips, incidents, tasks, instructions, contexts, drivers, commissions, financial_profiles, tracking, communication, settlements, trips_v2
 )
 
 api_router = APIRouter()
@@ -33,3 +33,6 @@ api_router.include_router(financial_profiles.router, prefix="/financial-profiles
 
 # Plug in Settlements (Payouts)
 api_router.include_router(settlements.router, prefix="/settlements", tags=["Settlements"])
+
+
+api_router.include_router(trips_v2.router, prefix="/trips/v2", tags=["Trips V2 (AI Optimized)"])
